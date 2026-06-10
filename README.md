@@ -14,6 +14,19 @@ A WordPress hardening plugin that reduces what mass scanners can fingerprint on 
 - Blocks direct access to `readme.txt`, `changelog.txt`, `license.txt`, `readme.html` (Apache; Nginx config below).
 - Disables the REST user-enumeration endpoint (`/wp-json/wp/v2/users`) for anonymous visitors.
 - Blocks `?author=N` enumeration that leaks usernames.
+- **(Opt-in)** Strips the `Version:` header from the active/parent theme's `style.css` — the line WPScan's "Style" detection reads. See caveats below.
+
+### Theme version (style.css)
+
+Scanners like WPScan fetch `style.css` directly and parse its `Version:` header (e.g. `Version: 8.30`). `style.css` is a **static file** the webserver serves to browsers, so a plugin can't intercept the request — the only way to remove the version is to **edit the file**. The opt-in *Strip theme version* toggle does this:
+
+- Blanks the `Version:` value in the active theme's and its parent's `style.css`.
+- Re-applies automatically after theme updates and on theme switch (so an update doesn't silently re-expose it).
+- Requires the `style.css` files to be writable; if they aren't, the settings page tells you.
+
+> ⚠️ **This edits theme files and patches nothing.** An outdated theme stays exploitable. If a scanner reports your theme is out of date, the fix is to **update the theme** — this toggle only hides the version string from passive fingerprinting. It is **off by default**.
+>
+> Note: the theme *name* still appears in asset paths (`/wp-content/themes/<name>/`) in your HTML. Hiding that requires full path-rewriting, which is out of scope for this plugin.
 
 ### XML-RPC
 Three modes (Settings → WP Obfuscation):

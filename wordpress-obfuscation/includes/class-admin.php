@@ -53,7 +53,7 @@ class SCShield_Admin {
 		$out = scshield_default_settings();
 		$input = is_array( $input ) ? $input : array();
 
-		foreach ( array( 'remove_generator', 'remove_query_versions', 'block_readme_files', 'hide_rest_users', 'block_author_scan', 'disable_wp_cron', 'block_wpcron_external' ) as $bool ) {
+		foreach ( array( 'remove_generator', 'remove_query_versions', 'block_readme_files', 'hide_rest_users', 'block_author_scan', 'strip_theme_version', 'disable_wp_cron', 'block_wpcron_external' ) as $bool ) {
 			$out[ $bool ] = empty( $input[ $bool ] ) ? 0 : 1;
 		}
 
@@ -64,6 +64,17 @@ class SCShield_Admin {
 
 		// Keep .htaccess in sync after settings change.
 		SCShield_Htaccess::write( $out );
+
+		// Apply the theme-version strip immediately when enabled, and report
+		// back if the style.css files weren't writable so the user isn't misled.
+		if ( ! empty( $out['strip_theme_version'] ) ) {
+			$changed = ( new SCShield_Theme( $out ) )->strip();
+			if ( empty( $changed ) ) {
+				add_settings_error( SCSHIELD_OPTION, 'theme_strip', 'Theme version stripping is enabled, but no style.css was writable (or it was already blank). Check file permissions on your theme.', 'warning' );
+			} else {
+				add_settings_error( SCSHIELD_OPTION, 'theme_strip', 'Stripped the Version header from ' . count( $changed ) . ' style.css file(s). Remember: update the theme — this only hides the version.', 'updated' );
+			}
+		}
 
 		return $out;
 	}
@@ -93,6 +104,7 @@ class SCShield_Admin {
 					$this->checkbox( $name, 'block_readme_files', $s, 'Block readme / changelog files (Apache)', 'Denies direct access to readme.txt, changelog.txt, license.txt, readme.html via .htaccess. Nginx needs a manual rule — see plugin README.' );
 					$this->checkbox( $name, 'hide_rest_users', $s, 'Block REST user enumeration', 'Disables /wp-json/wp/v2/users for anonymous requests.' );
 					$this->checkbox( $name, 'block_author_scan', $s, 'Block ?author=N enumeration', 'Stops the author-ID redirect that leaks usernames.' );
+					$this->checkbox( $name, 'strip_theme_version', $s, 'Strip theme version from style.css', '<strong>Edits theme files.</strong> Blanks the <code>Version:</code> header in the active and parent theme\'s style.css (the line WPScan reads). Re-applied after theme updates. This does <strong>not</strong> patch the theme — update it. Requires writable style.css.' );
 					?>
 				</table>
 

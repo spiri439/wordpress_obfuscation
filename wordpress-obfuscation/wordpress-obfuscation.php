@@ -37,6 +37,7 @@ function scshield_default_settings() {
 		'block_readme_files'    => 1, // Block readme/changelog via .htaccess (Apache).
 		'hide_rest_users'       => 1, // Block the wp-json user-enumeration endpoint.
 		'block_author_scan'     => 1, // Block ?author=N enumeration redirects.
+		'strip_theme_version'   => 0, // Blank Version: in theme style.css (edits files; off by default).
 
 		// XML-RPC.
 		'xmlrpc_mode'           => 'disable', // 'off' | 'disable' | 'pingback_only_off'
@@ -66,6 +67,7 @@ function scshield_get_settings() {
 require_once SCSHIELD_DIR . 'includes/class-fingerprint.php';
 require_once SCSHIELD_DIR . 'includes/class-xmlrpc.php';
 require_once SCSHIELD_DIR . 'includes/class-wpcron.php';
+require_once SCSHIELD_DIR . 'includes/class-theme.php';
 require_once SCSHIELD_DIR . 'includes/class-admin.php';
 require_once SCSHIELD_DIR . 'includes/class-htaccess.php';
 
@@ -78,6 +80,7 @@ function scshield_init() {
 	( new SCShield_Fingerprint( $settings ) )->hooks();
 	( new SCShield_XMLRPC( $settings ) )->hooks();
 	( new SCShield_WPCron( $settings ) )->hooks();
+	( new SCShield_Theme( $settings ) )->hooks();
 
 	if ( is_admin() ) {
 		( new SCShield_Admin( $settings ) )->hooks();
