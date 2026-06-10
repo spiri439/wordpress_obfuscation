@@ -55,12 +55,25 @@ class SCShield_HTMLClean {
 			return $html;
 		}
 
-		// Remove every <meta name="generator" ...> regardless of attribute order.
-		$html = preg_replace(
-			'/<meta\b(?=[^>]*\bname=(["\'])generator\1)[^>]*>\s*/i',
-			'',
-			$html
-		);
+		// Remove <meta name="generator"> tags. If the WordPress core version is
+		// in Decoy mode (a fake "WordPress <ver>" generator is intentionally
+		// emitted), keep that one and strip only the others (plugin-emitted).
+		$keep_wp = ! empty( $this->s['wp_spoof_use_latest'] )
+			|| '' !== trim( (string) ( isset( $this->s['wp_version_spoof'] ) ? $this->s['wp_version_spoof'] : '' ) );
+
+		if ( $keep_wp ) {
+			$html = preg_replace(
+				'/<meta\b(?=[^>]*\bname=(?:["\'])generator(?:["\']))(?![^>]*content=(?:["\'])WordPress)[^>]*>\s*/i',
+				'',
+				$html
+			);
+		} else {
+			$html = preg_replace(
+				'/<meta\b(?=[^>]*\bname=(?:["\'])generator(?:["\']))[^>]*>\s*/i',
+				'',
+				$html
+			);
+		}
 
 		// Handle ?ver= on asset URLs left inside inline CSS/markup (e.g.
 		// @font-face url(".../fa-solid-900.woff2?ver=8.30")). The enqueue filter

@@ -6,6 +6,23 @@ A WordPress hardening plugin that reduces what mass scanners can fingerprint on 
 
 — Author: **spiri439** · Site: [vesrl.ro](https://vesrl.ro) · Requires WordPress 5.0+ and PHP 5.6+
 
+## Two modes, two dropdowns
+
+The version controls are two dropdowns under **Settings → WP Obfuscation → Version obfuscation**:
+
+| Dropdown | Controls |
+|---|---|
+| **WordPress core version** | `<meta generator>`, feeds, WLW manifest |
+| **Plugin & theme versions** | asset `?ver=`, `<body>` version classes, inline-CSS asset URLs, plugin-emitted `<meta generator>` tags |
+
+Each dropdown has three settings:
+
+- **Off** — leave the real version visible.
+- **Obfuscate** — remove / hide the version.
+- **Decoy** — report the **latest** release (auto-detected from WordPress's update data) so the site looks fully patched and version-matching bots move on. (An old version invites probing; "latest" is the deterrent.)
+
+Masking the theme's `style.css` version is a separate **advanced** checkbox (it edits a file and affects the theme update notice — see below). It follows whichever mode you picked for plugin & theme versions.
+
 ## What it does
 
 ### Fingerprint hardening

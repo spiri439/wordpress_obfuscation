@@ -43,41 +43,64 @@ define( 'SCSHIELD_OPTION', 'scshield_settings' );
  */
 function scshield_default_settings() {
 	return array(
-		// Fingerprint hardening.
-		'remove_generator'      => 1, // Strip <meta generator> + version from feeds/scripts.
-		'wp_spoof_use_latest'   => 0,  // Decoy = latest WP version (looks patched -> deters bots).
-		'wp_version_spoof'      => '', // Manual decoy version; fallback when "use latest" is off/unavailable.
-		'remove_query_versions' => 1, // Strip ?ver= from enqueued CSS/JS.
-		'spoof_components_latest' => 0, // Rewrite plugin/theme versions to their LATEST instead of removing them.
-		'strip_body_versions'   => 1, // Strip version classes from <body> (e.g. Zephyr_8.30, js-comp-ver-X).
-		'clean_html_output'     => 1, // Buffer front-end HTML and strip plugin <meta generator> tags.
+		// PRIMARY mode dropdowns. Each: 'off' | 'obfuscate' | 'decoy'.
+		//   obfuscate = remove/hide the version.
+		//   decoy     = report the LATEST version (looks patched -> deters bots).
+		'mode_wp'               => 'obfuscate', // WordPress core version.
+		'mode_components'       => 'obfuscate', // Plugin & theme versions.
+
+		// Manual decoy WP version; fallback when latest can't be auto-detected.
+		'wp_version_spoof'      => '',
+
+		// Theme style.css editing (advanced; edits files, affects theme update notice).
+		'strip_theme_version'   => 0,
+
+		// Other hardening (independent of the version modes).
 		'block_readme_files'    => 1, // Block readme/changelog via .htaccess (Apache).
 		'hide_rest_users'       => 1, // Block the wp-json user-enumeration endpoint.
 		'block_author_scan'     => 1, // Block ?author=N enumeration redirects.
-		'strip_theme_version'   => 0, // Blank Version: in theme style.css (edits files; off by default).
 
 		// XML-RPC.
 		'xmlrpc_mode'           => 'disable', // 'off' | 'disable' | 'pingback_only_off'
-		                                      // off = leave default behavior
-		                                      // disable = return 404 (hidden)
-		                                      // pingback_only_off = keep xmlrpc, kill pingback.
 
 		// WP-Cron.
-		'disable_wp_cron'       => 1, // Set DISABLE_WP_CRON-equivalent: stop the HTTP self-trigger.
-		'block_wpcron_external' => 1, // 403 direct external hits to wp-cron.php.
-		'wpcron_secret'         => '', // Optional token to still allow ?doing_wp_cron=<secret>.
+		'disable_wp_cron'       => 1,
+		'block_wpcron_external' => 1,
+		'wpcron_secret'         => '',
 	);
 }
 
 /**
- * Get merged settings (defaults + saved).
+ * Derive the granular behavior flags the modules read from the two primary
+ * mode dropdowns. Keeps module logic simple and the two modes authoritative.
+ */
+function scshield_normalize_settings( $s ) {
+	$wp   = isset( $s['mode_wp'] ) ? $s['mode_wp'] : 'obfuscate';
+	$comp = isset( $s['mode_components'] ) ? $s['mode_components'] : 'obfuscate';
+
+	// WordPress core version.
+	$s['remove_generator']    = ( 'off' !== $wp ) ? 1 : 0;
+	$s['wp_spoof_use_latest'] = ( 'decoy' === $wp ) ? 1 : 0;
+
+	// Plugin & theme versions.
+	$comp_on                    = ( 'off' !== $comp );
+	$s['remove_query_versions'] = $comp_on ? 1 : 0;
+	$s['strip_body_versions']   = $comp_on ? 1 : 0;
+	$s['clean_html_output']     = $comp_on ? 1 : 0;
+	$s['spoof_components_latest'] = ( 'decoy' === $comp ) ? 1 : 0;
+
+	return $s;
+}
+
+/**
+ * Get merged settings (defaults + saved), with mode-derived flags applied.
  */
 function scshield_get_settings() {
 	$saved = get_option( SCSHIELD_OPTION, array() );
 	if ( ! is_array( $saved ) ) {
 		$saved = array();
 	}
-	return wp_parse_args( $saved, scshield_default_settings() );
+	return scshield_normalize_settings( wp_parse_args( $saved, scshield_default_settings() ) );
 }
 
 // Load modules.

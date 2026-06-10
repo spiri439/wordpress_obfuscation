@@ -53,7 +53,14 @@ class SCShield_Admin {
 		$out = scshield_default_settings();
 		$input = is_array( $input ) ? $input : array();
 
-		foreach ( array( 'remove_generator', 'wp_spoof_use_latest', 'remove_query_versions', 'spoof_components_latest', 'strip_body_versions', 'clean_html_output', 'block_readme_files', 'hide_rest_users', 'block_author_scan', 'strip_theme_version', 'disable_wp_cron', 'block_wpcron_external' ) as $bool ) {
+		// Primary mode dropdowns.
+		foreach ( array( 'mode_wp', 'mode_components' ) as $mode_key ) {
+			$val = isset( $input[ $mode_key ] ) ? $input[ $mode_key ] : 'obfuscate';
+			$out[ $mode_key ] = in_array( $val, array( 'off', 'obfuscate', 'decoy' ), true ) ? $val : 'obfuscate';
+		}
+
+		// Remaining independent booleans.
+		foreach ( array( 'block_readme_files', 'hide_rest_users', 'block_author_scan', 'strip_theme_version', 'disable_wp_cron', 'block_wpcron_external' ) as $bool ) {
 			$out[ $bool ] = empty( $input[ $bool ] ) ? 0 : 1;
 		}
 
@@ -62,8 +69,11 @@ class SCShield_Admin {
 
 		$out['wpcron_secret'] = isset( $input['wpcron_secret'] ) ? preg_replace( '/[^A-Za-z0-9_\-]/', '', $input['wpcron_secret'] ) : '';
 
-		// Decoy WordPress version: digits, dots, spaces, letters, hyphens only.
+		// Manual decoy WordPress version: digits, dots, spaces, letters, hyphens only.
 		$out['wp_version_spoof'] = isset( $input['wp_version_spoof'] ) ? trim( preg_replace( '/[^0-9A-Za-z. \-]/', '', $input['wp_version_spoof'] ) ) : '';
+
+		// Apply the mode-derived flags so saved settings and modules stay in sync.
+		$out = scshield_normalize_settings( $out );
 
 		// Keep .htaccess in sync after settings change.
 		SCShield_Htaccess::write( $out );
@@ -103,28 +113,43 @@ class SCShield_Admin {
 				<?php settings_fields( 'scshield_group' ); ?>
 				<?php $name = SCSHIELD_OPTION; ?>
 
-				<h2>Fingerprint hardening</h2>
+				<h2>Version obfuscation</h2>
+				<p class="description" style="max-width:760px">
+					Pick how each version should appear to scanners. <strong>Obfuscate</strong> removes/hides the version;
+					<strong>Decoy</strong> reports the <em>latest</em> release (auto-detected) so the site looks fully patched and bots move on.
+				</p>
 				<table class="form-table" role="presentation">
 					<?php
-					$this->checkbox( $name, 'remove_generator', $s, 'Remove WordPress version', 'Strips the &lt;meta generator&gt; tag, feed generators, WLW manifest, and version readouts.' );
-					$this->checkbox( $name, 'wp_spoof_use_latest', $s, 'Decoy as the latest WordPress version', 'Recommended. Reports your site as running the <strong>latest</strong> WordPress release (auto-detected from WordPress\'s own update data) so scanners see a fully-patched site and move on. Showing an <em>old</em> decoy — or nothing — can instead invite probing. Requires "Remove WordPress version".' );
+					$mode_opts = array(
+						'off'       => 'Off — leave the real version visible',
+						'obfuscate' => 'Obfuscate — remove / hide the version',
+						'decoy'     => 'Decoy — report the latest version (looks patched)',
+					);
+					$this->mode_select( $name, 'mode_wp', $s, 'WordPress core version', $mode_opts, 'Controls the <code>&lt;meta generator&gt;</code>, feeds, and WLW manifest. Decoy emits <code>WordPress &lt;latest&gt;</code>.' );
+					$this->mode_select( $name, 'mode_components', $s, 'Plugin &amp; theme versions', $mode_opts, 'Controls asset <code>?ver=</code>, <code>&lt;body&gt;</code> version classes, inline-CSS asset URLs, and plugin-emitted <code>&lt;meta generator&gt;</code> tags (e.g. Slider Revolution). Decoy rewrites each to its latest; unknown components fall back to removal.' );
 					?>
 					<tr>
-						<th scope="row">Manual decoy version (optional)</th>
+						<th scope="row">Manual decoy WP version</th>
 						<td>
-							<input type="text" class="regular-text" name="<?php echo esc_attr( $name ); ?>[wp_version_spoof]" value="<?php echo esc_attr( $s['wp_version_spoof'] ); ?>" placeholder="leave blank to remove the version entirely">
-							<p class="description">Used only when "Decoy as the latest" is off (or the latest can't be detected). If set (e.g. <code>6.5</code>), the generator emits <code>WordPress &lt;decoy&gt;</code>; blank removes the version entirely. <strong>Prefer a recent/latest value — never an old one.</strong></p>
+							<input type="text" class="regular-text" name="<?php echo esc_attr( $name ); ?>[wp_version_spoof]" value="<?php echo esc_attr( $s['wp_version_spoof'] ); ?>" placeholder="optional — e.g. 6.5">
+							<p class="description">Only used when <em>WordPress core version</em> = Decoy and the latest can't be auto-detected. <strong>Prefer a recent value, never an old one.</strong></p>
 						</td>
 					</tr>
+				</table>
+
+				<h2>Theme style.css (advanced)</h2>
+				<table class="form-table" role="presentation">
 					<?php
-					$this->checkbox( $name, 'remove_query_versions', $s, 'Remove ?ver= from CSS/JS', 'Hides plugin/theme versions in asset URLs. Note: also affects cache-busting on updates.' );
-					$this->checkbox( $name, 'spoof_components_latest', $s, 'Report plugins &amp; themes as their latest versions', 'Instead of <em>removing</em> plugin/theme versions, rewrite them to each component\'s <strong>latest</strong> release (auto-detected from WordPress\'s update data). Affects asset <code>?ver=</code>, body classes, inline-CSS asset URLs, and (if "Strip theme version" is on) the theme <code>style.css</code> header. Makes every component look patched so scanners move on. Unknown components fall back to removal.' );
-					$this->checkbox( $name, 'strip_body_versions', $s, 'Strip version classes from &lt;body&gt;', 'Removes version numbers from body classes read by WPScan\'s "Body Tag" detection: <code>js-comp-ver-6.7.0</code> (dropped), and the version number in <code>Zephyr_8.30</code> / <code>us-core_8.31.1</code> / <code>…-ver-1.2.3</code> (base name kept so theme CSS still works).' );
-					$this->checkbox( $name, 'clean_html_output', $s, 'Strip plugin &lt;meta generator&gt; tags', 'Buffers the front-end HTML and removes plugin-emitted generator tags that core filters miss, e.g. <code>Powered by Slider Revolution 6.7.35</code> and WPBakery. Skips admin/AJAX/REST/feeds.' );
+					$this->checkbox( $name, 'strip_theme_version', $s, 'Mask the theme version in style.css', '<strong>Edits theme files.</strong> The theme version in <code>style.css</code> is a static file scanners read directly — the only way to change it is to edit the file. Follows the <em>Plugin &amp; theme versions</em> mode above (blank when Obfuscate, latest when Decoy), re-applied after updates. Hides WordPress\'s native theme-update notice, so the plugin shows its own update notice instead. Requires writable <code>style.css</code>.' );
+					?>
+				</table>
+
+				<h2>Other hardening</h2>
+				<table class="form-table" role="presentation">
+					<?php
 					$this->checkbox( $name, 'block_readme_files', $s, 'Block readme / changelog files (Apache)', 'Denies direct access to readme.txt, changelog.txt, license.txt, readme.html via .htaccess. Nginx needs a manual rule — see plugin README.' );
 					$this->checkbox( $name, 'hide_rest_users', $s, 'Block REST user enumeration', 'Disables /wp-json/wp/v2/users for anonymous requests.' );
 					$this->checkbox( $name, 'block_author_scan', $s, 'Block ?author=N enumeration', 'Stops the author-ID redirect that leaks usernames.' );
-					$this->checkbox( $name, 'strip_theme_version', $s, 'Strip theme version from style.css', '<strong>Edits theme files.</strong> Blanks the <code>Version:</code> header in the active and parent theme\'s style.css (the line WPScan reads). Re-applied after theme updates. This does <strong>not</strong> patch the theme — update it. Requires writable style.css.' );
 					?>
 				</table>
 
@@ -180,6 +205,23 @@ class SCShield_Admin {
 					<input type="checkbox" name="<?php echo esc_attr( $name ); ?>[<?php echo esc_attr( $key ); ?>]" value="1" <?php checked( ! empty( $s[ $key ] ) ); ?>>
 					Enabled
 				</label>
+				<p class="description"><?php echo wp_kses_post( $desc ); ?></p>
+			</td>
+		</tr>
+		<?php
+	}
+
+	private function mode_select( $name, $key, $s, $label, $options, $desc ) {
+		$current = isset( $s[ $key ] ) ? $s[ $key ] : 'obfuscate';
+		?>
+		<tr>
+			<th scope="row"><?php echo wp_kses_post( $label ); ?></th>
+			<td>
+				<select name="<?php echo esc_attr( $name ); ?>[<?php echo esc_attr( $key ); ?>]">
+					<?php foreach ( $options as $val => $text ) : ?>
+						<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $current, $val ); ?>><?php echo esc_html( $text ); ?></option>
+					<?php endforeach; ?>
+				</select>
 				<p class="description"><?php echo wp_kses_post( $desc ); ?></p>
 			</td>
 		</tr>
