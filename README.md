@@ -11,6 +11,7 @@ A WordPress hardening plugin that reduces what mass scanners can fingerprint on 
 ### Fingerprint hardening
 - Removes the WordPress version (`<meta generator>`, feed generators, version readouts).
 - Strips `?ver=` from enqueued CSS/JS so plugin/theme versions aren't exposed in asset URLs.
+- Strips version-revealing classes from the `<body>` tag (e.g. WPBakery / js_composer's `js-comp-ver-6.7.0` and any `…-ver-1.2.3` class) — the "Body Tag" passive detection.
 - Blocks direct access to `readme.txt`, `changelog.txt`, `license.txt`, `readme.html` (Apache; Nginx config below).
 - Disables the REST user-enumeration endpoint (`/wp-json/wp/v2/users`) for anonymous visitors.
 - Blocks `?author=N` enumeration that leaks usernames.

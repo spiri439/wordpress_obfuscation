@@ -25,6 +25,10 @@ class SCShield_Fingerprint {
 			add_filter( 'style_loader_src', array( $this, 'strip_ver_query' ), 9999 );
 			add_filter( 'script_loader_src', array( $this, 'strip_ver_query' ), 9999 );
 		}
+		if ( ! empty( $this->s['strip_body_versions'] ) ) {
+			// Run late so we strip classes other plugins/themes have already added.
+			add_filter( 'body_class', array( $this, 'strip_body_version_classes' ), 9999 );
+		}
 		if ( ! empty( $this->s['hide_rest_users'] ) ) {
 			add_filter( 'rest_endpoints', array( $this, 'block_rest_user_endpoints' ) );
 		}
@@ -71,6 +75,30 @@ class SCShield_Fingerprint {
 			$src = remove_query_arg( 'ver', $src );
 		}
 		return $src;
+	}
+
+	/**
+	 * Remove version-revealing classes from the <body> tag. Plugins/themes leak
+	 * their version here for scanners to read passively, e.g. WPBakery / js_composer
+	 * adds "js-comp-ver-6.7.0". Generic: also drops any "...-ver-1.2.3" class.
+	 *
+	 * Matched by the "Body Tag (Passive Detection)" method in WPScan.
+	 */
+	public function strip_body_version_classes( $classes ) {
+		if ( ! is_array( $classes ) ) {
+			return $classes;
+		}
+		foreach ( $classes as $i => $class ) {
+			if (
+				// WPBakery Page Builder (js_composer).
+				preg_match( '/^js-comp-ver-[\d.]+$/i', $class )
+				// Generic "<something>-ver-1.2.3" version class.
+				|| preg_match( '/-ver-\d[\d.]*$/i', $class )
+			) {
+				unset( $classes[ $i ] );
+			}
+		}
+		return array_values( $classes );
 	}
 
 	/**

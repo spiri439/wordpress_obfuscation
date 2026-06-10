@@ -34,6 +34,7 @@ function scshield_default_settings() {
 		// Fingerprint hardening.
 		'remove_generator'      => 1, // Strip <meta generator> + version from feeds/scripts.
 		'remove_query_versions' => 1, // Strip ?ver= from enqueued CSS/JS.
+		'strip_body_versions'   => 1, // Strip version classes from <body> (e.g. js-comp-ver-X).
 		'block_readme_files'    => 1, // Block readme/changelog via .htaccess (Apache).
 		'hide_rest_users'       => 1, // Block the wp-json user-enumeration endpoint.
 		'block_author_scan'     => 1, // Block ?author=N enumeration redirects.
