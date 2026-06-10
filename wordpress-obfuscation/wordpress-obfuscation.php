@@ -8,7 +8,8 @@
  * Requires PHP:      5.6
  * Author:            spiri439
  * Author URI:        https://vesrl.ro
- * License:           GPL-2.0-or-later
+ * License:           GPLv2 or later
+ * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       wordpress-obfuscation
  *
  * SECURITY NOTE: This plugin obscures version/endpoint fingerprints to cut down
