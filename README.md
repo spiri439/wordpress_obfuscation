@@ -34,6 +34,13 @@ Components the plugin can't map (the slug isn't in WordPress's update data) fall
 
 > Bots version-match: a component reporting its latest release looks patched and gets skipped, whereas an old version invites probing. This is obfuscation only — it doesn't update anything.
 
+#### Effect on WordPress's own update checks
+
+These changes are front-end output and **do not** affect how WordPress detects updates — with one exception:
+
+- **Core, and all plugins:** unaffected. WordPress reads the real version from `version.php` and each plugin's PHP header (which this plugin never edits), so update notifications keep working normally. The decoy/`?ver=`/body-class changes are output-only.
+- **Theme (only when *Strip theme version* is on):** the theme's version lives in `style.css`, which is *both* the file WordPress reads for update detection *and* the file scanners read — they can't be given different values. In latest-spoof mode the header is rewritten to the latest version, so WordPress considers the theme current and **stops showing its update**. In removal/blank mode the update is still offered, but the admin shows no theme version. Leave *Strip theme version* off if you want the theme update nag preserved.
+
 ### Theme version (style.css)
 
 Scanners like WPScan fetch `style.css` directly and parse its `Version:` header (e.g. `Version: 8.30`). `style.css` is a **static file** the webserver serves to browsers, so a plugin can't intercept the request — the only way to remove the version is to **edit the file**. The opt-in *Strip theme version* toggle does this:
