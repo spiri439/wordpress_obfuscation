@@ -53,7 +53,7 @@ class SCShield_Admin {
 		$out = scshield_default_settings();
 		$input = is_array( $input ) ? $input : array();
 
-		foreach ( array( 'remove_generator', 'remove_query_versions', 'strip_body_versions', 'clean_html_output', 'block_readme_files', 'hide_rest_users', 'block_author_scan', 'strip_theme_version', 'disable_wp_cron', 'block_wpcron_external' ) as $bool ) {
+		foreach ( array( 'remove_generator', 'wp_spoof_use_latest', 'remove_query_versions', 'strip_body_versions', 'clean_html_output', 'block_readme_files', 'hide_rest_users', 'block_author_scan', 'strip_theme_version', 'disable_wp_cron', 'block_wpcron_external' ) as $bool ) {
 			$out[ $bool ] = empty( $input[ $bool ] ) ? 0 : 1;
 		}
 
@@ -67,6 +67,9 @@ class SCShield_Admin {
 
 		// Keep .htaccess in sync after settings change.
 		SCShield_Htaccess::write( $out );
+
+		// Re-resolve the latest WP version on next load (picks up fresh data).
+		delete_transient( 'scshield_latest_wp' );
 
 		// Apply the theme-version strip immediately when enabled, and report
 		// back if the style.css files weren't writable so the user isn't misled.
@@ -103,12 +106,13 @@ class SCShield_Admin {
 				<table class="form-table" role="presentation">
 					<?php
 					$this->checkbox( $name, 'remove_generator', $s, 'Remove WordPress version', 'Strips the &lt;meta generator&gt; tag, feed generators, WLW manifest, and version readouts.' );
+					$this->checkbox( $name, 'wp_spoof_use_latest', $s, 'Decoy as the latest WordPress version', 'Recommended. Reports your site as running the <strong>latest</strong> WordPress release (auto-detected from WordPress\'s own update data) so scanners see a fully-patched site and move on. Showing an <em>old</em> decoy — or nothing — can instead invite probing. Requires "Remove WordPress version".' );
 					?>
 					<tr>
-						<th scope="row">Decoy WordPress version (optional)</th>
+						<th scope="row">Manual decoy version (optional)</th>
 						<td>
 							<input type="text" class="regular-text" name="<?php echo esc_attr( $name ); ?>[wp_version_spoof]" value="<?php echo esc_attr( $s['wp_version_spoof'] ); ?>" placeholder="leave blank to remove the version entirely">
-							<p class="description">If set (e.g. <code>4.9.8</code>), the generator emits <code>WordPress &lt;decoy&gt;</code> instead of nothing — misdirecting version-matching scanners. Requires "Remove WordPress version" enabled.</p>
+							<p class="description">Used only when "Decoy as the latest" is off (or the latest can't be detected). If set (e.g. <code>6.5</code>), the generator emits <code>WordPress &lt;decoy&gt;</code>; blank removes the version entirely. <strong>Prefer a recent/latest value — never an old one.</strong></p>
 						</td>
 					</tr>
 					<?php

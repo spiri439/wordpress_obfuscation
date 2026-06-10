@@ -53,7 +53,15 @@ class SCShield_Fingerprint {
 		// The Windows Live Writer manifest is a pure fingerprint with no value.
 		remove_action( 'wp_head', 'wlwmanifest_link' );
 
-		$spoof = isset( $this->s['wp_version_spoof'] ) ? trim( (string) $this->s['wp_version_spoof'] ) : '';
+		// Prefer the LATEST WordPress version as the decoy so the site looks
+		// fully patched (deters bots), rather than an old version (attracts them).
+		$spoof = '';
+		if ( ! empty( $this->s['wp_spoof_use_latest'] ) ) {
+			$spoof = $this->latest_wp_version();
+		}
+		if ( '' === $spoof ) {
+			$spoof = isset( $this->s['wp_version_spoof'] ) ? trim( (string) $this->s['wp_version_spoof'] ) : '';
+		}
 
 		if ( '' !== $spoof ) {
 			// Decoy mode: feed scanners a fake version instead of nothing.
@@ -105,6 +113,46 @@ class SCShield_Fingerprint {
 	 */
 	public function spoof_meta( $gen ) {
 		return '<meta name="generator" content="WordPress ' . esc_attr( $this->spoof ) . '">';
+	}
+
+	/**
+	 * Resolve the latest available WordPress version without an external call,
+	 * using the data WordPress already caches from its own update checks.
+	 * Falls back to the installed version (still better than an old fake).
+	 * Result is cached for 12h to keep front-end requests cheap.
+	 */
+	private function latest_wp_version() {
+		$cached = get_transient( 'scshield_latest_wp' );
+		if ( ! empty( $cached ) ) {
+			return $cached;
+		}
+
+		$ver    = '';
+		$update = get_site_transient( 'update_core' );
+
+		if ( is_object( $update ) && ! empty( $update->updates ) && is_array( $update->updates ) ) {
+			// Pick the highest offered version across all update channels.
+			foreach ( $update->updates as $offer ) {
+				if ( ! empty( $offer->current ) && ( '' === $ver || version_compare( $offer->current, $ver, '>' ) ) ) {
+					$ver = $offer->current;
+				}
+			}
+			// If no upgrade was offered, the checked version is the latest.
+			if ( '' === $ver && ! empty( $update->version_checked ) ) {
+				$ver = $update->version_checked;
+			}
+		}
+
+		if ( '' === $ver ) {
+			// Last resort: the installed version.
+			global $wp_version;
+			$ver = isset( $wp_version ) ? $wp_version : '';
+		}
+
+		if ( '' !== $ver ) {
+			set_transient( 'scshield_latest_wp', $ver, 12 * HOUR_IN_SECONDS );
+		}
+		return $ver;
 	}
 
 	/**

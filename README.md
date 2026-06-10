@@ -10,7 +10,9 @@ A WordPress hardening plugin that reduces what mass scanners can fingerprint on 
 
 ### Fingerprint hardening
 - Removes the WordPress core version: `<meta generator>`, feed generators, the WLW manifest link, and version readouts. (Core asset `?ver=` and `readme.html` — the other core-version tells — are covered by the `?ver=` strip and the readme blocker.)
-- **Optional decoy:** instead of removing the version, emit a *fake* one (e.g. `WordPress 4.9.8`). An absent generator can itself flag a hardened site; a wrong version actively misdirects version-matching bots. Set it in the *Decoy WordPress version* field.
+- **Optional decoy:** instead of removing the version, emit a decoy one so scanners misjudge the site.
+  - **Decoy as latest (recommended):** auto-reports the *latest* WordPress release (detected from WordPress's own update data — no external call, cached 12h). Bots version-match, see a fully-patched site, and move on. Showing an **old** version — or nothing — can instead invite probing, so latest is the smart choice.
+  - **Manual decoy:** a fixed version you type in, used only when "decoy as latest" is off or the latest can't be detected. Prefer a recent value, never an old one.
 - Strips `?ver=` from enqueued CSS/JS so plugin/theme versions aren't exposed in asset URLs.
 - Strips version numbers from `<body>` classes — the "Body Tag" passive detection. Drops `js-comp-ver-6.7.0` (WPBakery), and removes the version from `Zephyr_8.30` / `us-core_8.31.1` / `…-ver-1.2.3` while keeping the base name so theme CSS keeps working.
 - Strips plugin-emitted `<meta name="generator">` tags that core filters miss (e.g. `Powered by Slider Revolution 6.7.35`, WPBakery) by buffering the front-end HTML.
