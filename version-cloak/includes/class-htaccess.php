@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class SCShield_Htaccess {
 
-	const MARKER = 'WordPress Obfuscation';
+	const MARKER = 'Version Cloak';
 
 	/**
 	 * Write our rules into the root .htaccess (idempotent, marked block).

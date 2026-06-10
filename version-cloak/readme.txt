@@ -1,4 +1,4 @@
-=== WordPress Obfuscation ===
+=== Version Cloak ===
 Contributors: spiri439
 Tags: security, version, hardening, xml-rpc, wp-cron
 Requires at least: 5.0
@@ -12,7 +12,7 @@ Reduce what automated scanners can fingerprint on your site: hide or decoy plugi
 
 == Description ==
 
-WordPress Obfuscation is a hardening plugin that reduces the information opportunistic, automated scanners can read about your site. Version-matching bots fingerprint a site, look up known issues for the detected versions, and probe the easy targets first. This plugin shrinks that fingerprint.
+Version Cloak is a hardening plugin that reduces the information opportunistic, automated scanners can read about your site. Version-matching bots fingerprint a site, look up known issues for the detected versions, and probe the easy targets first. This plugin shrinks that fingerprint.
 
 **Important:** this plugin obscures version and endpoint information. It does **not** patch vulnerable code. Keep your plugins, themes, and WordPress core updated — obscurity is a complement to patching, not a replacement for it.
 
@@ -47,9 +47,9 @@ Setting a mode to **Off**, or deactivating the plugin, restores the real version
 
 == Installation ==
 
-1. Upload the `wordpress-obfuscation` folder to `/wp-content/plugins/`, or install the ZIP via **Plugins → Add New → Upload Plugin**.
+1. Upload the `version-cloak` folder to `/wp-content/plugins/`, or install the ZIP via **Plugins → Add New → Upload Plugin**.
 2. Activate the plugin through the **Plugins** menu.
-3. Configure under **Settings → WP Obfuscation**.
+3. Configure under **Settings → Version Cloak**.
 4. If you use a page cache (LiteSpeed, etc.) or a CDN, purge it after changing settings so the changes are served.
 
 == Frequently Asked Questions ==

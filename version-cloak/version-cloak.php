@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name:       WordPress Obfuscation
+ * Plugin Name:       Version Cloak
  * Plugin URI:        https://vesrl.ro
  * Description:        Reduces fingerprinting by mass scanners: hides plugin/core version leaks, neutralizes XML-RPC, and locks down WP-Cron. Hardening layer — NOT a substitute for keeping plugins updated.
  * Version:           1.0.0
@@ -10,7 +10,7 @@
  * Author URI:        https://vesrl.ro
  * License:           GPLv2 or later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain:       wordpress-obfuscation
+ * Text Domain:       version-cloak
  *
  * SECURITY NOTE: This plugin obscures version/endpoint fingerprints to cut down
  * opportunistic automated scanning. It does NOT patch vulnerable code. Keep your
@@ -28,7 +28,7 @@ if ( version_compare( PHP_VERSION, '5.6', '<' ) ) {
 	add_action( 'admin_notices', 'scshield_php_notice' );
 	if ( ! function_exists( 'scshield_php_notice' ) ) {
 		function scshield_php_notice() {
-			echo '<div class="notice notice-error"><p>WordPress Obfuscation requires PHP 5.6 or newer. It has been disabled.</p></div>';
+			echo '<div class="notice notice-error"><p>Version Cloak requires PHP 5.6 or newer. It has been disabled.</p></div>';
 		}
 	}
 	return; // Stop loading the rest of the plugin.

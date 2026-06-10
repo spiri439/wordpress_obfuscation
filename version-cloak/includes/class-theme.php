@@ -181,7 +181,7 @@ class SCShield_Theme {
 			// Confirm an unmask just happened, if flagged.
 			if ( get_transient( 'scshield_unmasked' ) ) {
 				delete_transient( 'scshield_unmasked' );
-				echo '<div class="notice notice-info is-dismissible"><p><strong>WordPress Obfuscation:</strong> theme version temporarily unmasked. Update your theme now from Appearance &rarr; Themes; it will be re-masked automatically afterward.</p></div>';
+				echo '<div class="notice notice-info is-dismissible"><p><strong>Version Cloak:</strong> theme version temporarily unmasked. Update your theme now from Appearance &rarr; Themes; it will be re-masked automatically afterward.</p></div>';
 			}
 			return;
 		}
@@ -192,7 +192,7 @@ class SCShield_Theme {
 		}
 		$unmask_url = wp_nonce_url( admin_url( 'admin-post.php?action=scshield_unmask_theme' ), 'scshield_unmask' );
 
-		echo '<div class="notice notice-warning"><p><strong>WordPress Obfuscation — theme update available:</strong> ' . wp_kses_post( implode( ', ', $lines ) ) . '.<br>'
+		echo '<div class="notice notice-warning"><p><strong>Version Cloak — theme update available:</strong> ' . wp_kses_post( implode( ', ', $lines ) ) . '.<br>'
 			. 'WordPress\'s own update notice is hidden because the theme version is masked. '
 			. '<a href="' . esc_url( $unmask_url ) . '">Temporarily unmask to update</a> (it re-masks automatically after the update).</p></div>';
 	}

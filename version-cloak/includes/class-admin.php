@@ -24,16 +24,16 @@ class SCShield_Admin {
 
 	public function menu() {
 		add_options_page(
-			'WordPress Obfuscation',
-			'WP Obfuscation',
+			'Version Cloak',
+			'Version Cloak',
 			'manage_options',
-			'wp-obfuscation',
+			'version-cloak',
 			array( $this, 'render' )
 		);
 	}
 
 	public function settings_link( $links ) {
-		$url = admin_url( 'options-general.php?page=wp-obfuscation' );
+		$url = admin_url( 'options-general.php?page=version-cloak' );
 		array_unshift( $links, '<a href="' . esc_url( $url ) . '">Settings</a>' );
 		return $links;
 	}
@@ -122,7 +122,7 @@ class SCShield_Admin {
 		$s = scshield_get_settings();
 		?>
 		<div class="wrap">
-			<h1>WordPress Obfuscation</h1>
+			<h1>Version Cloak</h1>
 			<p style="max-width:760px">
 				<strong>Reminder:</strong> this plugin <em>hides</em> fingerprints to cut down
 				opportunistic scanning. It does not patch vulnerable code. Keep plugins, themes,
