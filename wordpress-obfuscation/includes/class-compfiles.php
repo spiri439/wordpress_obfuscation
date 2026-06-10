@@ -190,6 +190,7 @@ class SCShield_CompFiles {
 			if ( false !== strpos( $file, '/' ) ) {
 				$installed = isset( $data['Version'] ) ? $data['Version'] : '';
 				$out[] = array(
+					'slug'      => $slug,
 					'dir'       => trailingslashit( WP_PLUGIN_DIR ) . $slug,
 					'installed' => $installed,
 					'latest'    => isset( $latest_plugins[ $slug ] ) ? $latest_plugins[ $slug ] : $installed,
@@ -201,12 +202,46 @@ class SCShield_CompFiles {
 		foreach ( wp_get_themes() as $slug => $theme ) {
 			$installed = $theme->get( 'Version' );
 			$out[] = array(
+				'slug'      => $slug,
 				'dir'       => $theme->get_stylesheet_directory(),
 				'installed' => is_string( $installed ) ? $installed : '',
 				'latest'    => isset( $latest_themes[ $slug ] ) ? $latest_themes[ $slug ] : $installed,
 			);
 		}
 
+		// Apply in-memory manual overrides (the just-submitted settings aren't
+		// persisted yet during a save, so SCShield_Versions::manual() can't see
+		// them — read them straight from $this->s here).
+		$manual = $this->manual_map();
+		if ( $manual ) {
+			foreach ( $out as &$t ) {
+				if ( isset( $t['slug'] ) && isset( $manual[ $t['slug'] ] ) ) {
+					$t['latest'] = $manual[ $t['slug'] ];
+				}
+			}
+			unset( $t );
+		}
+
 		return $out;
+	}
+
+	/**
+	 * Parse the "slug = version" overrides from the current (in-memory) settings.
+	 */
+	private function manual_map() {
+		$raw = isset( $this->s['manual_versions'] ) ? (string) $this->s['manual_versions'] : '';
+		$map = array();
+		foreach ( preg_split( '/[\r\n]+/', $raw ) as $line ) {
+			if ( false === strpos( $line, '=' ) ) {
+				continue;
+			}
+			list( $slug, $ver ) = explode( '=', $line, 2 );
+			$slug = trim( $slug );
+			$ver  = trim( $ver );
+			if ( '' !== $slug && '' !== $ver ) {
+				$map[ $slug ] = $ver;
+			}
+		}
+		return $map;
 	}
 }
