@@ -46,8 +46,8 @@ function scshield_default_settings() {
 		// PRIMARY mode dropdowns. Each: 'off' | 'obfuscate' | 'decoy'.
 		//   obfuscate = remove/hide the version.
 		//   decoy     = report the LATEST version (looks patched -> deters bots).
-		'mode_wp'               => 'obfuscate', // WordPress core version.
-		'mode_components'       => 'obfuscate', // Plugin & theme versions.
+		'mode_wp'               => 'decoy', // WordPress core version.
+		'mode_components'       => 'decoy', // Plugin & theme versions.
 
 		// Manual decoy WP version; fallback when latest can't be auto-detected.
 		'wp_version_spoof'      => '',
@@ -75,8 +75,8 @@ function scshield_default_settings() {
  * mode dropdowns. Keeps module logic simple and the two modes authoritative.
  */
 function scshield_normalize_settings( $s ) {
-	$wp   = isset( $s['mode_wp'] ) ? $s['mode_wp'] : 'obfuscate';
-	$comp = isset( $s['mode_components'] ) ? $s['mode_components'] : 'obfuscate';
+	$wp   = isset( $s['mode_wp'] ) ? $s['mode_wp'] : 'decoy';
+	$comp = isset( $s['mode_components'] ) ? $s['mode_components'] : 'decoy';
 
 	// WordPress core version.
 	$s['remove_generator']    = ( 'off' !== $wp ) ? 1 : 0;

@@ -19,7 +19,7 @@ Each dropdown has three settings:
 
 - **Off** — leave the real version visible.
 - **Obfuscate** — remove / hide the version.
-- **Decoy** — report the **latest** release (auto-detected from WordPress's update data) so the site looks fully patched and version-matching bots move on. (An old version invites probing; "latest" is the deterrent.)
+- **Decoy** *(default)* — report the **latest** release (auto-detected from WordPress's update data) so the site looks fully patched and version-matching bots move on. (An old version invites probing; "latest" is the deterrent.) Note: for **premium** components not tracked by WordPress's updater, "latest known" equals the installed version, so use Obfuscate there if you need the version hidden.
 
 Masking the theme's `style.css` version is a separate **advanced** checkbox (it edits a file and affects the theme update notice — see below). It follows whichever mode you picked for plugin & theme versions.
 

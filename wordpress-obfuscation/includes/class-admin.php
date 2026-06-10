@@ -55,8 +55,8 @@ class SCShield_Admin {
 
 		// Primary mode dropdowns.
 		foreach ( array( 'mode_wp', 'mode_components' ) as $mode_key ) {
-			$val = isset( $input[ $mode_key ] ) ? $input[ $mode_key ] : 'obfuscate';
-			$out[ $mode_key ] = in_array( $val, array( 'off', 'obfuscate', 'decoy' ), true ) ? $val : 'obfuscate';
+			$val = isset( $input[ $mode_key ] ) ? $input[ $mode_key ] : 'decoy';
+			$out[ $mode_key ] = in_array( $val, array( 'off', 'obfuscate', 'decoy' ), true ) ? $val : 'decoy';
 		}
 
 		// Remaining independent booleans.
@@ -212,7 +212,7 @@ class SCShield_Admin {
 	}
 
 	private function mode_select( $name, $key, $s, $label, $options, $desc ) {
-		$current = isset( $s[ $key ] ) ? $s[ $key ] : 'obfuscate';
+		$current = isset( $s[ $key ] ) ? $s[ $key ] : 'decoy';
 		?>
 		<tr>
 			<th scope="row"><?php echo wp_kses_post( $label ); ?></th>
