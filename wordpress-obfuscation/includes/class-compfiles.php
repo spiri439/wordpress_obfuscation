@@ -104,36 +104,52 @@ class SCShield_CompFiles {
 	 * Decoy (Off/Obfuscate) and on deactivation.
 	 */
 	public function restore() {
-		$record = get_option( 'scshield_decoyed', array() );
-		if ( ! is_array( $record ) || ! $record ) {
-			return array();
-		}
+		$record   = get_option( 'scshield_decoyed', array() );
+		$record   = is_array( $record ) ? $record : array();
 		$reverted = array();
 
 		foreach ( $this->targets() as $t ) {
 			$slug = isset( $t['slug'] ) ? $t['slug'] : '';
-			if ( '' === $slug || ! isset( $record[ $slug ] ) ) {
+			$to   = $t['installed']; // the real version to restore to
+			if ( '' === $to ) {
 				continue;
 			}
-			$from = $record[ $slug ]['decoy'];     // what we wrote
-			$to   = $record[ $slug ]['installed'];  // the real version
-			if ( '' === $from || $from === $to ) {
+
+			// Candidate "decoy" tokens to revert: the recorded one (precise) and
+			// the currently-computed latest (covers files bumped by older builds
+			// that didn't record anything). De-duplicated, never equal to real.
+			$froms = array();
+			if ( '' !== $slug && isset( $record[ $slug ]['decoy'] ) ) {
+				$froms[] = $record[ $slug ]['decoy'];
+			}
+			if ( ! empty( $t['latest'] ) ) {
+				$froms[] = $t['latest'];
+			}
+			$froms = array_unique( array_filter( $froms, function ( $v ) use ( $to ) {
+				return '' !== $v && $v !== $to;
+			} ) );
+			if ( ! $froms ) {
 				continue;
 			}
-			foreach ( $this->version_files_in_dir( $t['dir'] ) as $file ) {
-				if ( $this->rewrite( $file, $from, $to, false ) ) {
-					$reverted[] = $file;
+
+			$vfiles = $this->version_files_in_dir( $t['dir'] );
+			$afiles = $this->asset_files( $t['dir'] );
+			foreach ( $froms as $from ) {
+				foreach ( $vfiles as $file ) {
+					if ( $this->rewrite( $file, $from, $to, false ) ) {
+						$reverted[] = $file;
+					}
 				}
-			}
-			foreach ( $this->asset_files( $t['dir'] ) as $file ) {
-				if ( $this->rewrite( $file, $from, $to, true ) ) {
-					$reverted[] = $file;
+				foreach ( $afiles as $file ) {
+					if ( $this->rewrite( $file, $from, $to, true ) ) {
+						$reverted[] = $file;
+					}
 				}
 			}
 		}
 
 		delete_option( 'scshield_decoyed' );
-		return $reverted;
+		return array_values( array_unique( $reverted ) );
 	}
 
 	/**
