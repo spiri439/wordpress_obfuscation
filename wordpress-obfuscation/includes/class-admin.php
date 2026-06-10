@@ -73,6 +73,9 @@ class SCShield_Admin {
 		// Manual decoy WordPress version: digits, dots, spaces, letters, hyphens only.
 		$out['wp_version_spoof'] = isset( $input['wp_version_spoof'] ) ? trim( preg_replace( '/[^0-9A-Za-z. \-]/', '', $input['wp_version_spoof'] ) ) : '';
 
+		// Manual per-component version overrides (textarea: "slug = version" lines).
+		$out['manual_versions'] = isset( $input['manual_versions'] ) ? trim( preg_replace( '/[^0-9A-Za-z._= \r\n-]/', '', $input['manual_versions'] ) ) : '';
+
 		// Apply the mode-derived flags so saved settings and modules stay in sync.
 		$out = scshield_normalize_settings( $out );
 
@@ -141,6 +144,13 @@ class SCShield_Admin {
 						<td>
 							<input type="text" class="regular-text" name="<?php echo esc_attr( $name ); ?>[wp_version_spoof]" value="<?php echo esc_attr( $s['wp_version_spoof'] ); ?>" placeholder="optional — e.g. 6.5">
 							<p class="description">Only used when <em>WordPress core version</em> = Decoy and the latest can't be auto-detected. <strong>Prefer a recent value, never an old one.</strong></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">Manual versions (premium plugins/themes)</th>
+						<td>
+							<textarea class="large-text code" rows="4" name="<?php echo esc_attr( $name ); ?>[manual_versions]" placeholder="revslider = 6.7.57&#10;enfold = 6.1.4"><?php echo esc_textarea( $s['manual_versions'] ); ?></textarea>
+							<p class="description">One <code>slug = version</code> per line. Use for premium components WordPress can't report a latest for (the slug is the plugin/theme folder name, e.g. <code>revslider</code>). Decoy will report these versions. Takes precedence over auto-detection.</p>
 						</td>
 					</tr>
 				</table>

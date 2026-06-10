@@ -52,6 +52,10 @@ function scshield_default_settings() {
 		// Manual decoy WP version; fallback when latest can't be auto-detected.
 		'wp_version_spoof'      => '',
 
+		// Manual "slug = version" overrides for premium plugins/themes WordPress
+		// can't report a latest for (one per line, e.g. "revslider = 6.7.57").
+		'manual_versions'       => '',
+
 		// Theme style.css editing (advanced; edits files, affects theme update notice).
 		'strip_theme_version'   => 0,
 

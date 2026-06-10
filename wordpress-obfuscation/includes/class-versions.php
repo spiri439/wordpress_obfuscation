@@ -51,6 +51,11 @@ class SCShield_Versions {
 			}
 		}
 
+		// Manual overrides win (premium plugins WordPress can't see).
+		foreach ( self::manual() as $slug => $ver ) {
+			$map[ $slug ] = $ver;
+		}
+
 		set_transient( 'scshield_latest_plugins', $map, 12 * HOUR_IN_SECONDS );
 		return $map;
 	}
@@ -83,6 +88,11 @@ class SCShield_Versions {
 					}
 				}
 			}
+		}
+
+		// Manual overrides win (premium themes WordPress can't see).
+		foreach ( self::manual() as $slug => $ver ) {
+			$map[ $slug ] = $ver;
 		}
 
 		set_transient( 'scshield_latest_themes', $map, 12 * HOUR_IN_SECONDS );
@@ -130,15 +140,12 @@ class SCShield_Versions {
 	}
 
 	/**
-	 * Force WordPress to re-check wordpress.org for the newest plugin/theme
-	 * versions, then clear our caches so the next read sees fresh "latest" data.
-	 * Heavy (external calls) — call only on settings save / after updates.
+	 * Refresh "latest" data NON-destructively. We ask WordPress to update its
+	 * plugin/theme info if it's due (this never wipes existing data on failure),
+	 * then clear only our own caches. Premium plugins WordPress can't see are
+	 * covered by the manual override (see manual()).
 	 */
 	public static function force_refresh() {
-		// Clear WP's throttle so the check actually re-queries wordpress.org.
-		delete_site_transient( 'update_plugins' );
-		delete_site_transient( 'update_themes' );
-
 		if ( function_exists( 'wp_update_plugins' ) ) {
 			wp_update_plugins();
 		}
@@ -146,6 +153,29 @@ class SCShield_Versions {
 			wp_update_themes();
 		}
 		self::flush();
+	}
+
+	/**
+	 * Manual "slug = version" overrides for components WordPress can't tell us
+	 * the latest of (premium plugins/themes, e.g. "revslider = 6.7.57").
+	 * Read from the plugin settings textarea.
+	 */
+	public static function manual() {
+		$opt = get_option( SCSHIELD_OPTION, array() );
+		$raw = ( is_array( $opt ) && isset( $opt['manual_versions'] ) ) ? (string) $opt['manual_versions'] : '';
+		$map = array();
+		foreach ( preg_split( '/[\r\n]+/', $raw ) as $line ) {
+			if ( false === strpos( $line, '=' ) ) {
+				continue;
+			}
+			list( $slug, $ver ) = explode( '=', $line, 2 );
+			$slug = trim( $slug );
+			$ver  = trim( $ver );
+			if ( '' !== $slug && '' !== $ver ) {
+				$map[ $slug ] = $ver;
+			}
+		}
+		return $map;
 	}
 
 	private static function slug_from_plugin_file( $file ) {
