@@ -23,7 +23,9 @@ class SCShield_Htaccess {
 	 * Write our rules into the root .htaccess (idempotent, marked block).
 	 */
 	public static function write( array $settings ) {
-		if ( empty( $settings['block_readme_files'] ) ) {
+		$rules = self::rules( $settings );
+
+		if ( empty( $rules ) ) {
 			self::remove();
 			return;
 		}
@@ -38,7 +40,6 @@ class SCShield_Htaccess {
 			return;
 		}
 
-		$rules = self::rules();
 		insert_with_markers( $htaccess, self::MARKER, $rules );
 	}
 
@@ -58,23 +59,49 @@ class SCShield_Htaccess {
 	}
 
 	/**
-	 * The actual rules. Block direct access to version-revealing static files.
+	 * Build the rule lines from the current settings. Empty array => no block.
+	 *   - block_readme_files (components Obfuscate): version-revealing static files.
+	 *   - block_install (WP version not Off): /wp-admin/install.php, which leaks
+	 *     the real core version via ?ver and runs before plugins load (so PHP
+	 *     filters can't touch it).
 	 */
-	private static function rules() {
-		// Filenames that scanners read for versions: readme, changelog, license,
-		// and plugin "release log" files (e.g. Slider Revolution's release_log.html).
-		return array(
-			'<FilesMatch "(?i)^(readme|changelog|change-?log|changes|license|readme-[a-z]+|release[_-]?log)\.(txt|html|md)$">',
-			'    Require all denied',
-			'</FilesMatch>',
-			'# Also block them anywhere under wp-content via a rewrite (mod_rewrite).',
-			'<IfModule mod_rewrite.c>',
-			'    RewriteEngine On',
-			'    RewriteRule (?i)^wp-content/.*/(readme|changelog|change-?log|changes|release[_-]?log)\.(txt|html|md)$ - [F,L]',
-			'    RewriteRule (?i)^readme\.html$ - [F,L]',
-			'    RewriteRule (?i)^license\.txt$ - [F,L]',
-			'</IfModule>',
-		);
+	private static function rules( $settings = array() ) {
+		$readme  = ! empty( $settings['block_readme_files'] );
+		$install = ! empty( $settings['block_install'] );
+
+		if ( ! $readme && ! $install ) {
+			return array();
+		}
+
+		$rules   = array();
+		$rewrite = array();
+
+		if ( $readme ) {
+			// Filenames scanners read for versions: readme/changelog/license, and
+			// plugin "release log" files (e.g. Slider Revolution's release_log.html).
+			$rules[] = '<FilesMatch "(?i)^(readme|changelog|change-?log|changes|license|readme-[a-z]+|release[_-]?log)\.(txt|html|md)$">';
+			$rules[] = '    Require all denied';
+			$rules[] = '</FilesMatch>';
+			$rewrite[] = '    RewriteRule (?i)^wp-content/.*/(readme|changelog|change-?log|changes|release[_-]?log)\.(txt|html|md)$ - [F,L]';
+			$rewrite[] = '    RewriteRule (?i)^readme\.html$ - [F,L]';
+			$rewrite[] = '    RewriteRule (?i)^license\.txt$ - [F,L]';
+		}
+
+		if ( $install ) {
+			// install.php leaks the core version (its assets carry ?ver) and runs
+			// before plugins load, so PHP filters can't touch it. It's unneeded on
+			// a live site. NOT upgrade.php — that's required after core updates.
+			$rewrite[] = '    RewriteRule (?i)^wp-admin/install\.php$ - [F,L]';
+		}
+
+		if ( $rewrite ) {
+			$rules[] = '<IfModule mod_rewrite.c>';
+			$rules[] = '    RewriteEngine On';
+			$rules   = array_merge( $rules, $rewrite );
+			$rules[] = '</IfModule>';
+		}
+
+		return $rules;
 	}
 
 	private static function path() {

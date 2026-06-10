@@ -84,6 +84,9 @@ function scshield_normalize_settings( $s ) {
 	// WordPress core version.
 	$s['remove_generator']    = ( 'off' !== $wp ) ? 1 : 0;
 	$s['wp_spoof_use_latest'] = ( 'decoy' === $wp ) ? 1 : 0;
+	// install.php leaks the core version and can't be filtered by PHP (runs
+	// before plugins load), so block it whenever we're managing the WP version.
+	$s['block_install']       = ( 'off' !== $wp ) ? 1 : 0;
 
 	// Plugin & theme versions.
 	$comp_on                    = ( 'off' !== $comp );
