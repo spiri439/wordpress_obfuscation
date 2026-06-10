@@ -151,7 +151,7 @@ class SCShield_Admin {
 						<th scope="row">Manual decoy WP version</th>
 						<td>
 							<input type="text" class="regular-text" name="<?php echo esc_attr( $name ); ?>[wp_version_spoof]" value="<?php echo esc_attr( $s['wp_version_spoof'] ); ?>" placeholder="optional — e.g. 6.5">
-							<p class="description">Only used when <em>WordPress core version</em> = Decoy and the latest can't be auto-detected. <strong>Prefer a recent value, never an old one.</strong></p>
+							<p class="description">When <em>WordPress core version</em> = Decoy, this <strong>overrides</strong> the auto-detected latest (generator + core asset <code>?ver=</code>). Leave blank to use the real latest. <strong>Prefer a recent value, never an old one</strong> — an old version invites probing.</p>
 						</td>
 					</tr>
 					<tr>

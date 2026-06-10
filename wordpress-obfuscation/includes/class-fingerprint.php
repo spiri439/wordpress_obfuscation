@@ -54,15 +54,7 @@ class SCShield_Fingerprint {
 		// The Windows Live Writer manifest is a pure fingerprint with no value.
 		remove_action( 'wp_head', 'wlwmanifest_link' );
 
-		// Prefer the LATEST WordPress version as the decoy so the site looks
-		// fully patched (deters bots), rather than an old version (attracts them).
-		$spoof = '';
-		if ( ! empty( $this->s['wp_spoof_use_latest'] ) ) {
-			$spoof = $this->latest_wp_version();
-		}
-		if ( '' === $spoof ) {
-			$spoof = isset( $this->s['wp_version_spoof'] ) ? trim( (string) $this->s['wp_version_spoof'] ) : '';
-		}
+		$spoof = $this->wp_decoy_version();
 
 		if ( '' !== $spoof ) {
 			// Decoy mode: feed scanners a fake version instead of nothing.
@@ -180,11 +172,31 @@ class SCShield_Fingerprint {
 		if ( strpos( $src, 'ver=' ) === false ) {
 			return $src;
 		}
+		// Plugin/theme asset -> that component's latest.
 		$latest = SCShield_Versions::latest_for_url( $src );
 		if ( '' !== $latest ) {
 			return add_query_arg( 'ver', $latest, $src );
 		}
+		// WordPress core asset (wp-includes / wp-admin) -> the WP decoy version,
+		// so core assets match the decoy generator instead of leaking the real one.
+		$wp = $this->wp_decoy_version();
+		if ( '' !== $wp ) {
+			return add_query_arg( 'ver', $wp, $src );
+		}
 		return remove_query_arg( 'ver', $src );
+	}
+
+	/**
+	 * The decoy version to report for WordPress core, in Decoy mode only:
+	 * the manual override if set, otherwise the auto-detected latest. Empty in
+	 * Obfuscate/Off (so the version is removed, not faked).
+	 */
+	private function wp_decoy_version() {
+		if ( empty( $this->s['wp_spoof_use_latest'] ) ) {
+			return ''; // not in WP-core Decoy mode
+		}
+		$manual = isset( $this->s['wp_version_spoof'] ) ? trim( (string) $this->s['wp_version_spoof'] ) : '';
+		return ( '' !== $manual ) ? $manual : $this->latest_wp_version();
 	}
 
 	/**
