@@ -39,7 +39,9 @@ Components the plugin can't map (the slug isn't in WordPress's update data) fall
 These changes are front-end output and **do not** affect how WordPress detects updates — with one exception:
 
 - **Core, and all plugins:** unaffected. WordPress reads the real version from `version.php` and each plugin's PHP header (which this plugin never edits), so update notifications keep working normally. The decoy/`?ver=`/body-class changes are output-only.
-- **Theme (only when *Strip theme version* is on):** the theme's version lives in `style.css`, which is *both* the file WordPress reads for update detection *and* the file scanners read — they can't be given different values. In latest-spoof mode the header is rewritten to the latest version, so WordPress considers the theme current and **stops showing its update**. In removal/blank mode the update is still offered, but the admin shows no theme version. Leave *Strip theme version* off if you want the theme update nag preserved.
+- **Theme (only when *Strip theme version* is on):** the theme's version lives in `style.css`, which is *both* the file the theme's updater reads to detect updates *and* the file scanners read — they can't be given different values. **Editing that header in *either* mode (blank or latest) hides WordPress's native theme-update notice**, because the updater can no longer see the real installed version.
+
+  To avoid leaving you blind to theme updates, the plugin **records the real version before masking** and shows **its own** "theme update available" admin notice (installed → latest), with a **one-click "temporarily unmask to update"** link. After you update, `upgrader_process_complete` re-captures the new real version and re-masks automatically. If you'd rather keep WordPress's *native* nag instead, leave *Strip theme version* off and rely on the `?ver=`/body-class/output strips (a scanner fetching `style.css` directly would then still read the real version).
 
 ### Theme version (style.css)
 
