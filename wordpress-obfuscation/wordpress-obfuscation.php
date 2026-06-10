@@ -45,6 +45,7 @@ function scshield_default_settings() {
 	return array(
 		// Fingerprint hardening.
 		'remove_generator'      => 1, // Strip <meta generator> + version from feeds/scripts.
+		'wp_version_spoof'      => '', // If set, emit this DECOY WP version instead of removing it.
 		'remove_query_versions' => 1, // Strip ?ver= from enqueued CSS/JS.
 		'strip_body_versions'   => 1, // Strip version classes from <body> (e.g. Zephyr_8.30, js-comp-ver-X).
 		'clean_html_output'     => 1, // Buffer front-end HTML and strip plugin <meta generator> tags.

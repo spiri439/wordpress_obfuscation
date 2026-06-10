@@ -13,6 +13,9 @@ class SCShield_Fingerprint {
 	/** @var array */
 	private $s;
 
+	/** @var string Decoy WordPress version when spoofing. */
+	private $spoof = '';
+
 	public function __construct( array $settings ) {
 		$this->s = $settings;
 	}
@@ -38,10 +41,34 @@ class SCShield_Fingerprint {
 	}
 
 	/**
-	 * Remove the WordPress version from every place core leaks it: the HTML
-	 * <meta name="generator">, RSS/Atom feeds, and the generator readout.
+	 * Hide (or spoof) the WordPress core version everywhere core leaks it: the
+	 * HTML <meta name="generator">, RSS/Atom feeds, the WLW manifest link, and
+	 * the generator readout.
+	 *
+	 * If a decoy version is configured (wp_version_spoof), the HTML generator
+	 * emits "WordPress <decoy>" to misdirect version-matching scanners; feeds
+	 * are blanked so they can't contradict it. Otherwise the version is removed.
 	 */
 	private function strip_generator() {
+		// The Windows Live Writer manifest is a pure fingerprint with no value.
+		remove_action( 'wp_head', 'wlwmanifest_link' );
+
+		$spoof = isset( $this->s['wp_version_spoof'] ) ? trim( (string) $this->s['wp_version_spoof'] ) : '';
+
+		if ( '' !== $spoof ) {
+			// Decoy mode: feed scanners a fake version instead of nothing.
+			$this->spoof = $spoof;
+			add_filter( 'the_generator', array( $this, 'spoof_generator' ), 9999, 2 );
+			add_filter( 'get_the_generator_html', array( $this, 'spoof_meta' ), 9999 );
+			add_filter( 'get_the_generator_xhtml', array( $this, 'spoof_meta' ), 9999 );
+			// Blank feed/comment/export generators so they don't leak the real one.
+			foreach ( array( 'get_the_generator_atom', 'get_the_generator_rss2', 'get_the_generator_rdf', 'get_the_generator_comment', 'get_the_generator_export' ) as $f ) {
+				add_filter( $f, '__return_empty_string' );
+			}
+			return;
+		}
+
+		// Removal mode (default).
 		remove_action( 'wp_head', 'wp_generator' );
 		add_filter( 'the_generator', '__return_empty_string' );
 
@@ -60,6 +87,24 @@ class SCShield_Fingerprint {
 
 	public function noop_generator() {
 		// Intentionally outputs nothing.
+	}
+
+	/**
+	 * Decoy <meta generator> for the_generator filter (HTML/XHTML only;
+	 * blank for feed/comment/export types so the format stays valid).
+	 */
+	public function spoof_generator( $gen, $type = 'html' ) {
+		if ( in_array( $type, array( 'html', 'xhtml' ), true ) ) {
+			return $this->spoof_meta( $gen );
+		}
+		return '';
+	}
+
+	/**
+	 * The decoy meta tag string.
+	 */
+	public function spoof_meta( $gen ) {
+		return '<meta name="generator" content="WordPress ' . esc_attr( $this->spoof ) . '">';
 	}
 
 	/**

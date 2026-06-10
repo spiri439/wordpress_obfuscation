@@ -62,6 +62,9 @@ class SCShield_Admin {
 
 		$out['wpcron_secret'] = isset( $input['wpcron_secret'] ) ? preg_replace( '/[^A-Za-z0-9_\-]/', '', $input['wpcron_secret'] ) : '';
 
+		// Decoy WordPress version: digits, dots, spaces, letters, hyphens only.
+		$out['wp_version_spoof'] = isset( $input['wp_version_spoof'] ) ? trim( preg_replace( '/[^0-9A-Za-z. \-]/', '', $input['wp_version_spoof'] ) ) : '';
+
 		// Keep .htaccess in sync after settings change.
 		SCShield_Htaccess::write( $out );
 
@@ -99,7 +102,16 @@ class SCShield_Admin {
 				<h2>Fingerprint hardening</h2>
 				<table class="form-table" role="presentation">
 					<?php
-					$this->checkbox( $name, 'remove_generator', $s, 'Remove WordPress version', 'Strips the &lt;meta generator&gt; tag, feed generator, and version readouts.' );
+					$this->checkbox( $name, 'remove_generator', $s, 'Remove WordPress version', 'Strips the &lt;meta generator&gt; tag, feed generators, WLW manifest, and version readouts.' );
+					?>
+					<tr>
+						<th scope="row">Decoy WordPress version (optional)</th>
+						<td>
+							<input type="text" class="regular-text" name="<?php echo esc_attr( $name ); ?>[wp_version_spoof]" value="<?php echo esc_attr( $s['wp_version_spoof'] ); ?>" placeholder="leave blank to remove the version entirely">
+							<p class="description">If set (e.g. <code>4.9.8</code>), the generator emits <code>WordPress &lt;decoy&gt;</code> instead of nothing — misdirecting version-matching scanners. Requires "Remove WordPress version" enabled.</p>
+						</td>
+					</tr>
+					<?php
 					$this->checkbox( $name, 'remove_query_versions', $s, 'Remove ?ver= from CSS/JS', 'Hides plugin/theme versions in asset URLs. Note: also affects cache-busting on updates.' );
 					$this->checkbox( $name, 'strip_body_versions', $s, 'Strip version classes from &lt;body&gt;', 'Removes version numbers from body classes read by WPScan\'s "Body Tag" detection: <code>js-comp-ver-6.7.0</code> (dropped), and the version number in <code>Zephyr_8.30</code> / <code>us-core_8.31.1</code> / <code>…-ver-1.2.3</code> (base name kept so theme CSS still works).' );
 					$this->checkbox( $name, 'clean_html_output', $s, 'Strip plugin &lt;meta generator&gt; tags', 'Buffers the front-end HTML and removes plugin-emitted generator tags that core filters miss, e.g. <code>Powered by Slider Revolution 6.7.35</code> and WPBakery. Skips admin/AJAX/REST/feeds.' );
