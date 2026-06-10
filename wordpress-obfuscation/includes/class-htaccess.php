@@ -61,14 +61,16 @@ class SCShield_Htaccess {
 	 * The actual rules. Block direct access to version-revealing static files.
 	 */
 	private static function rules() {
+		// Filenames that scanners read for versions: readme, changelog, license,
+		// and plugin "release log" files (e.g. Slider Revolution's release_log.html).
 		return array(
-			'<FilesMatch "(?i)^(readme|changelog|license|readme-[a-z]+|changes)\.(txt|html|md)$">',
+			'<FilesMatch "(?i)^(readme|changelog|change-?log|changes|license|readme-[a-z]+|release[_-]?log)\.(txt|html|md)$">',
 			'    Require all denied',
 			'</FilesMatch>',
 			'# Also block them anywhere under wp-content via a rewrite (mod_rewrite).',
 			'<IfModule mod_rewrite.c>',
 			'    RewriteEngine On',
-			'    RewriteRule (?i)^wp-content/.*/(readme|changelog|changes)\.(txt|html|md)$ - [F,L]',
+			'    RewriteRule (?i)^wp-content/.*/(readme|changelog|change-?log|changes|release[_-]?log)\.(txt|html|md)$ - [F,L]',
 			'    RewriteRule (?i)^readme\.html$ - [F,L]',
 			'    RewriteRule (?i)^license\.txt$ - [F,L]',
 			'</IfModule>',

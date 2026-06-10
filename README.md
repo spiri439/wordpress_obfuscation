@@ -33,7 +33,7 @@ Masking the theme's `style.css` version is a separate **advanced** checkbox (it 
 - Strips `?ver=` from enqueued CSS/JS so plugin/theme versions aren't exposed in asset URLs.
 - Strips version numbers from `<body>` classes — the "Body Tag" passive detection. Drops `js-comp-ver-6.7.0` (WPBakery), and removes the version from `Zephyr_8.30` / `us-core_8.31.1` / `…-ver-1.2.3` while keeping the base name so theme CSS keeps working.
 - Strips plugin-emitted `<meta name="generator">` tags that core filters miss (e.g. `Powered by Slider Revolution 6.7.35`, WPBakery) by buffering the front-end HTML.
-- Blocks direct access to `readme.txt`, `changelog.txt`, `license.txt`, `readme.html` (Apache; Nginx config below).
+- Blocks direct access to version-revealing static files — `readme.txt`, `changelog.txt`, `license.txt`, `readme.html`, and plugin **release-log** files like Slider Revolution's `release_log.html` (the file WPScan's *aggressive* detection reads). Apache/LiteSpeed via `.htaccess`; Nginx config below.
 - Disables the REST user-enumeration endpoint (`/wp-json/wp/v2/users`) for anonymous visitors.
 - Blocks `?author=N` enumeration that leaks usernames.
 - **(Opt-in)** Strips the `Version:` header from the active/parent theme's `style.css` — the line WPScan's "Style" detection reads. See caveats below.
@@ -118,7 +118,7 @@ The `.htaccess` rules are Apache-only. On Nginx, add this to your `server {}` bl
 ```nginx
 # Block version-revealing static files
 location ~* ^/(readme|license)\.(txt|html)$ { deny all; }
-location ~* /wp-content/.*/(readme|changelog|changes)\.(txt|html|md)$ { deny all; }
+location ~* /wp-content/.*/(readme|changelog|change-?log|changes|release[_-]?log)\.(txt|html|md)$ { deny all; }
 
 # Block direct external XML-RPC (optional — plugin also returns 404 in PHP)
 location = /xmlrpc.php { deny all; }
