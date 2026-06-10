@@ -102,13 +102,13 @@ class SCShield_Admin {
 		// Plugin/theme static files: Decoy rewrites to latest; Off/Obfuscate
 		// restores the real versions so nothing stays artificially bumped.
 		$compfiles = new SCShield_CompFiles( $out );
-		if ( ! empty( $out['mask_version_files'] ) ) {
+		if ( ! empty( $out['mask_version_files'] ) || ! empty( $out['mask_core_readme'] ) ) {
 			$n = count( $compfiles->apply() );
-			add_settings_error( SCSHIELD_OPTION, 'compfiles', 'Decoy: rewrote version strings in ' . $n . ' plugin/theme file(s) to their latest versions.', 'updated' );
+			add_settings_error( SCSHIELD_OPTION, 'compfiles', 'Decoy: rewrote version strings in ' . $n . ' file(s) (plugins/themes/core readme) to the decoy versions.', 'updated' );
 		} else {
 			$r = count( $compfiles->restore() );
 			if ( $r ) {
-				add_settings_error( SCSHIELD_OPTION, 'compfiles', 'Restored real version strings in ' . $r . ' plugin/theme file(s).', 'updated' );
+				add_settings_error( SCSHIELD_OPTION, 'compfiles', 'Restored real version strings in ' . $r . ' file(s).', 'updated' );
 			}
 		}
 

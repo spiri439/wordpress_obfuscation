@@ -42,10 +42,10 @@ class SCShield_CompFiles {
 	}
 
 	public function hooks() {
-		if ( empty( $this->s['mask_version_files'] ) ) {
+		if ( empty( $this->s['mask_version_files'] ) && empty( $this->s['mask_core_readme'] ) ) {
 			return;
 		}
-		// Re-apply after a plugin/theme update restores the real version.
+		// Re-apply after a plugin/theme/core update restores the real version.
 		add_action( 'upgrader_process_complete', array( $this, 'apply' ), 25 );
 	}
 
@@ -54,13 +54,37 @@ class SCShield_CompFiles {
 	 * reads as its latest. Returns the list of files changed.
 	 */
 	public function apply() {
-		if ( empty( $this->s['mask_version_files'] ) ) {
+		$do_comp = ! empty( $this->s['mask_version_files'] );
+		$do_core = ! empty( $this->s['mask_core_readme'] );
+		if ( ! $do_comp && ! $do_core ) {
 			return array();
 		}
 
 		SCShield_Versions::force_refresh(); // re-query wordpress.org for real latest
 		$changed = array();
 		$record  = array();
+
+		// WordPress core /readme.html -> the decoy core version.
+		if ( $do_core ) {
+			$decoy     = $this->wp_decoy();
+			$installed = function_exists( 'get_bloginfo' ) ? get_bloginfo( 'version' ) : '';
+			if ( '' !== $decoy && '' !== $installed && $decoy !== $installed ) {
+				$file = ABSPATH . 'readme.html';
+				if ( $this->rewrite( $file, $installed, $decoy, false ) ) {
+					$changed[]               = $file;
+					$record['__wp_core__']   = array( 'installed' => $installed, 'decoy' => $decoy );
+				}
+			}
+		}
+
+		if ( ! $do_comp ) {
+			if ( $record ) {
+				$prev = get_option( 'scshield_decoyed', array() );
+				$prev = is_array( $prev ) ? $prev : array();
+				update_option( 'scshield_decoyed', array_merge( $prev, $record ), false );
+			}
+			return $changed;
+		}
 
 		foreach ( $this->targets() as $t ) {
 			if ( '' === $t['installed'] || '' === $t['latest'] || $t['installed'] === $t['latest'] ) {
@@ -107,6 +131,20 @@ class SCShield_CompFiles {
 		$record   = get_option( 'scshield_decoyed', array() );
 		$record   = is_array( $record ) ? $record : array();
 		$reverted = array();
+
+		// Core /readme.html: revert decoy -> real installed version.
+		$file = ABSPATH . 'readme.html';
+		$installed = function_exists( 'get_bloginfo' ) ? get_bloginfo( 'version' ) : '';
+		$core_froms = array();
+		if ( isset( $record['__wp_core__']['decoy'] ) ) {
+			$core_froms[] = $record['__wp_core__']['decoy'];
+		}
+		$core_froms[] = $this->wp_decoy(); // covers edits with no record
+		foreach ( array_unique( $core_froms ) as $from ) {
+			if ( '' !== $from && '' !== $installed && $from !== $installed && $this->rewrite( $file, $from, $installed, false ) ) {
+				$reverted[] = $file;
+			}
+		}
 
 		foreach ( $this->targets() as $t ) {
 			$slug = isset( $t['slug'] ) ? $t['slug'] : '';
@@ -292,6 +330,14 @@ class SCShield_CompFiles {
 		}
 
 		return $out;
+	}
+
+	/**
+	 * The decoy WordPress core version: manual override if set, else latest.
+	 */
+	private function wp_decoy() {
+		$manual = isset( $this->s['wp_version_spoof'] ) ? trim( (string) $this->s['wp_version_spoof'] ) : '';
+		return ( '' !== $manual ) ? $manual : SCShield_Versions::latest_wp();
 	}
 
 	/**

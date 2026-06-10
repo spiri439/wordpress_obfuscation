@@ -216,6 +216,30 @@ class SCShield_Versions {
 	}
 
 	/**
+	 * The latest WordPress core version WordPress knows about (update_core data),
+	 * falling back to the installed version.
+	 */
+	public static function latest_wp() {
+		$ver    = '';
+		$update = get_site_transient( 'update_core' );
+		if ( is_object( $update ) && ! empty( $update->updates ) && is_array( $update->updates ) ) {
+			foreach ( $update->updates as $offer ) {
+				if ( ! empty( $offer->current ) && ( '' === $ver || version_compare( $offer->current, $ver, '>' ) ) ) {
+					$ver = $offer->current;
+				}
+			}
+			if ( '' === $ver && ! empty( $update->version_checked ) ) {
+				$ver = $update->version_checked;
+			}
+		}
+		if ( '' === $ver ) {
+			global $wp_version;
+			$ver = isset( $wp_version ) ? $wp_version : '';
+		}
+		return $ver;
+	}
+
+	/**
 	 * Manual "slug = version" overrides for components WordPress can't tell us
 	 * the latest of (premium plugins/themes, e.g. "revslider = 6.7.57").
 	 * Read from the plugin settings textarea.

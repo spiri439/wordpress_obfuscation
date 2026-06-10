@@ -84,8 +84,13 @@ function scshield_normalize_settings( $s ) {
 	// WordPress core version.
 	$s['remove_generator']    = ( 'off' !== $wp ) ? 1 : 0;
 	$s['wp_spoof_use_latest'] = ( 'decoy' === $wp ) ? 1 : 0;
-	// install.php leaks the core version and can't be filtered by PHP (runs
-	// before plugins load), so block it whenever we're managing the WP version.
+	// /readme.html + /license.txt: Obfuscate BLOCKS them; Decoy REWRITES readme
+	// to the decoy version so scanners read (and report) the fake version.
+	$s['block_core_readme']   = ( 'obfuscate' === $wp ) ? 1 : 0;
+	$s['mask_core_readme']    = ( 'decoy' === $wp ) ? 1 : 0;
+	// install.php/upgrade.php enqueue admin CSS with ?ver=<core> and run before
+	// plugins load, so PHP can't rewrite them — block (cookie-gated) in both
+	// Obfuscate and Decoy. There's no way to make them show the decoy version.
 	$s['block_install']       = ( 'off' !== $wp ) ? 1 : 0;
 
 	// Plugin & theme versions.

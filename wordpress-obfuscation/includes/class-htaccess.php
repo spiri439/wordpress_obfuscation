@@ -66,46 +66,44 @@ class SCShield_Htaccess {
 	 *     filters can't touch it).
 	 */
 	private static function rules( $settings = array() ) {
-		$readme  = ! empty( $settings['block_readme_files'] );
-		$install = ! empty( $settings['block_install'] );
+		$plugin_files = ! empty( $settings['block_readme_files'] );  // components Obfuscate
+		$core_readme  = ! empty( $settings['block_core_readme'] );    // WP Obfuscate
+		$install      = ! empty( $settings['block_install'] );        // WP not Off
 
-		if ( ! $readme && ! $install ) {
+		if ( ! $plugin_files && ! $core_readme && ! $install ) {
 			return array();
 		}
 
-		$rules   = array();
 		$rewrite = array();
 
-		if ( $readme ) {
-			// Plugin/theme static version files scanners read (readme/changelog/
-			// release_log). FilesMatch matches by basename anywhere under the site.
-			$rules[] = '<FilesMatch "(?i)^(readme|changelog|change-?log|changes|release[_-]?log)\.(txt|html|md)$">';
-			$rules[] = '    Require all denied';
-			$rules[] = '</FilesMatch>';
+		if ( $plugin_files ) {
+			// Plugin/theme static version files under wp-content (path-scoped so
+			// it never touches the core /readme.html that Decoy may be rewriting).
 			$rewrite[] = '    RewriteRule (?i)^wp-content/.*/(readme|changelog|change-?log|changes|release[_-]?log)\.(txt|html|md)$ - [F,L]';
 		}
 
-		if ( $install ) {
-			// WordPress core version leaks, tied to the WP-version mode.
-			// /readme.html ("Version x.y") and /license.txt: always safe to block.
+		if ( $core_readme ) {
+			// Core version leaks: /readme.html ("Version x.y") and /license.txt.
 			$rewrite[] = '    RewriteRule (?i)^readme\.html$ - [F,L]';
 			$rewrite[] = '    RewriteRule (?i)^license\.txt$ - [F,L]';
-			// install.php / upgrade.php enqueue admin CSS with ?ver=<core version>
-			// and run before plugins load (PHP filters can't touch them). Block
-			// them ONLY for visitors without a logged-in cookie, so scanners are
+		}
+
+		if ( $install ) {
+			// install.php/upgrade.php leak ?ver=<core> and run before plugins load.
+			// Block ONLY for visitors without a logged-in cookie, so scanners are
 			// denied but an admin running a real core update still gets through.
 			$rewrite[] = '    RewriteCond %{HTTP_COOKIE} !wordpress_logged_in_ [NC]';
 			$rewrite[] = '    RewriteRule (?i)^wp-admin/(install|upgrade)\.php$ - [F,L]';
 		}
 
-		if ( $rewrite ) {
-			$rules[] = '<IfModule mod_rewrite.c>';
-			$rules[] = '    RewriteEngine On';
-			$rules   = array_merge( $rules, $rewrite );
-			$rules[] = '</IfModule>';
+		if ( ! $rewrite ) {
+			return array();
 		}
-
-		return $rules;
+		return array_merge(
+			array( '<IfModule mod_rewrite.c>', '    RewriteEngine On' ),
+			$rewrite,
+			array( '</IfModule>' )
+		);
 	}
 
 	private static function path() {
