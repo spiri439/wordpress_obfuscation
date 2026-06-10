@@ -58,7 +58,7 @@ class SCShield_CompFiles {
 			return array();
 		}
 
-		SCShield_Versions::flush(); // ensure freshest "latest" data
+		SCShield_Versions::force_refresh(); // re-query wordpress.org for real latest
 		$changed = array();
 
 		foreach ( $this->targets() as $t ) {

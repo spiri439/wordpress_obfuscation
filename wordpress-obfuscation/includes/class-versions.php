@@ -129,6 +129,25 @@ class SCShield_Versions {
 		delete_transient( 'scshield_latest_themes' );
 	}
 
+	/**
+	 * Force WordPress to re-check wordpress.org for the newest plugin/theme
+	 * versions, then clear our caches so the next read sees fresh "latest" data.
+	 * Heavy (external calls) — call only on settings save / after updates.
+	 */
+	public static function force_refresh() {
+		// Clear WP's throttle so the check actually re-queries wordpress.org.
+		delete_site_transient( 'update_plugins' );
+		delete_site_transient( 'update_themes' );
+
+		if ( function_exists( 'wp_update_plugins' ) ) {
+			wp_update_plugins();
+		}
+		if ( function_exists( 'wp_update_themes' ) ) {
+			wp_update_themes();
+		}
+		self::flush();
+	}
+
 	private static function slug_from_plugin_file( $file ) {
 		// "akismet/akismet.php" => "akismet"; "hello.php" => "hello".
 		if ( false !== strpos( $file, '/' ) ) {
