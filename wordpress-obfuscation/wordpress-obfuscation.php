@@ -56,7 +56,6 @@ function scshield_default_settings() {
 		'strip_theme_version'   => 0,
 
 		// Other hardening (independent of the version modes).
-		'block_readme_files'    => 1, // Block readme/changelog via .htaccess (Apache).
 		'hide_rest_users'       => 1, // Block the wp-json user-enumeration endpoint.
 		'block_author_scan'     => 1, // Block ?author=N enumeration redirects.
 
@@ -89,6 +88,11 @@ function scshield_normalize_settings( $s ) {
 	$s['clean_html_output']     = $comp_on ? 1 : 0;
 	$s['spoof_components_latest'] = ( 'decoy' === $comp ) ? 1 : 0;
 
+	// Static version files (readme/changelog/release_log) for plugins & themes:
+	//   obfuscate -> BLOCK them (.htaccess);  decoy -> REWRITE them to latest.
+	$s['block_readme_files'] = ( 'obfuscate' === $comp ) ? 1 : 0;
+	$s['mask_version_files'] = ( 'decoy' === $comp ) ? 1 : 0;
+
 	return $s;
 }
 
@@ -109,6 +113,7 @@ require_once SCSHIELD_DIR . 'includes/class-fingerprint.php';
 require_once SCSHIELD_DIR . 'includes/class-xmlrpc.php';
 require_once SCSHIELD_DIR . 'includes/class-wpcron.php';
 require_once SCSHIELD_DIR . 'includes/class-theme.php';
+require_once SCSHIELD_DIR . 'includes/class-compfiles.php';
 require_once SCSHIELD_DIR . 'includes/class-htmlclean.php';
 require_once SCSHIELD_DIR . 'includes/class-admin.php';
 require_once SCSHIELD_DIR . 'includes/class-htaccess.php';
@@ -123,6 +128,7 @@ function scshield_init() {
 	( new SCShield_XMLRPC( $settings ) )->hooks();
 	( new SCShield_WPCron( $settings ) )->hooks();
 	( new SCShield_Theme( $settings ) )->hooks();
+	( new SCShield_CompFiles( $settings ) )->hooks();
 	( new SCShield_HTMLClean( $settings ) )->hooks();
 
 	if ( is_admin() ) {

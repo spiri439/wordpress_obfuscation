@@ -92,7 +92,36 @@ class SCShield_HTMLClean {
 			$html = preg_replace( $pattern, '$1', $html );
 		}
 
+		// Plugin version strings embedded in HTML comments. Yoast SEO prints
+		// "<!-- ... optimized with the Yoast SEO plugin v27.6 - ... -->".
+		// Decoy -> bump to the plugin's latest; Obfuscate -> drop the version.
+		$html = $this->handle_comment_version(
+			$html,
+			'/(Yoast SEO plugin v)([0-9][0-9.]*)/i',
+			'wordpress-seo'
+		);
+
 		return $html;
+	}
+
+	/**
+	 * Rewrite a "<name> vX.Y" version token in HTML comments to the component's
+	 * latest (Decoy) or remove the number (Obfuscate). $pattern must capture the
+	 * label in group 1 and the version in group 2.
+	 */
+	private function handle_comment_version( $html, $pattern, $slug ) {
+		$decoy  = ! empty( $this->s['spoof_components_latest'] );
+		$latest = $decoy ? SCShield_Versions::latest_plugin( $slug ) : '';
+		return preg_replace_callback(
+			$pattern,
+			function ( $m ) use ( $decoy, $latest ) {
+				if ( $decoy && '' !== $latest ) {
+					return $m[1] . $latest; // bump to latest
+				}
+				return $m[1]; // drop the version number
+			},
+			$html
+		);
 	}
 
 	/**

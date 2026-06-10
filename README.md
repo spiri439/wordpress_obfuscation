@@ -13,7 +13,7 @@ The version controls are two dropdowns under **Settings → WP Obfuscation → V
 | Dropdown | Controls |
 |---|---|
 | **WordPress core version** | `<meta generator>`, feeds, WLW manifest |
-| **Plugin & theme versions** | asset `?ver=`, `<body>` version classes, inline-CSS asset URLs, plugin-emitted `<meta generator>` tags |
+| **Plugin & theme versions** | asset `?ver=`, `<body>` version classes, inline-CSS asset URLs, plugin `<meta generator>` tags, HTML comments (e.g. Yoast SEO), and **static files** — `readme`/`changelog`/`release_log.html` and CSS/JS **banner comments** (e.g. `elementor - v3.17.0`) |
 
 Each dropdown has three settings:
 

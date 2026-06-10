@@ -59,8 +59,9 @@ class SCShield_Admin {
 			$out[ $mode_key ] = in_array( $val, array( 'off', 'obfuscate', 'decoy' ), true ) ? $val : 'decoy';
 		}
 
-		// Remaining independent booleans.
-		foreach ( array( 'block_readme_files', 'hide_rest_users', 'block_author_scan', 'strip_theme_version', 'disable_wp_cron', 'block_wpcron_external' ) as $bool ) {
+		// Remaining independent booleans. (block_readme_files is derived from the
+		// components mode in scshield_normalize_settings, not a checkbox.)
+		foreach ( array( 'hide_rest_users', 'block_author_scan', 'strip_theme_version', 'disable_wp_cron', 'block_wpcron_external' ) as $bool ) {
 			$out[ $bool ] = empty( $input[ $bool ] ) ? 0 : 1;
 		}
 
@@ -91,6 +92,13 @@ class SCShield_Admin {
 			} else {
 				add_settings_error( SCSHIELD_OPTION, 'theme_strip', 'Stripped the Version header from ' . count( $changed ) . ' style.css file(s). Remember: update the theme — this only hides the version.', 'updated' );
 			}
+		}
+
+		// Decoy mode: rewrite plugin/theme static version files (readme, changelog,
+		// release_log) and asset banner comments to the latest version.
+		if ( ! empty( $out['mask_version_files'] ) ) {
+			$n = count( ( new SCShield_CompFiles( $out ) )->apply() );
+			add_settings_error( SCSHIELD_OPTION, 'compfiles', 'Decoy: rewrote version strings in ' . $n . ' plugin/theme file(s) to their latest versions.', 'updated' );
 		}
 
 		return $out;
@@ -126,7 +134,7 @@ class SCShield_Admin {
 						'decoy'     => 'Decoy — report the latest version (looks patched)',
 					);
 					$this->mode_select( $name, 'mode_wp', $s, 'WordPress core version', $mode_opts, 'Controls the <code>&lt;meta generator&gt;</code>, feeds, and WLW manifest. Decoy emits <code>WordPress &lt;latest&gt;</code>.' );
-					$this->mode_select( $name, 'mode_components', $s, 'Plugin &amp; theme versions', $mode_opts, 'Controls asset <code>?ver=</code>, <code>&lt;body&gt;</code> version classes, inline-CSS asset URLs, and plugin-emitted <code>&lt;meta generator&gt;</code> tags (e.g. Slider Revolution). Decoy rewrites each to its latest; unknown components fall back to removal.' );
+					$this->mode_select( $name, 'mode_components', $s, 'Plugin &amp; theme versions', $mode_opts, 'Covers asset <code>?ver=</code>, <code>&lt;body&gt;</code> classes, inline-CSS URLs, plugin <code>&lt;meta generator&gt;</code> tags, HTML comments (e.g. Yoast), and static files (readme, changelog, <code>release_log.html</code>, and CSS/JS banner comments like Elementor). <strong>Obfuscate</strong> removes/blocks them; <strong>Decoy</strong> rewrites each to its latest version (uses WordPress\'s update data — known even for premium plugins that registered an update). Editing static files runs on save and after updates.' );
 					?>
 					<tr>
 						<th scope="row">Manual decoy WP version</th>
@@ -147,7 +155,6 @@ class SCShield_Admin {
 				<h2>Other hardening</h2>
 				<table class="form-table" role="presentation">
 					<?php
-					$this->checkbox( $name, 'block_readme_files', $s, 'Block readme / changelog files (Apache)', 'Denies direct access to readme.txt, changelog.txt, license.txt, readme.html via .htaccess. Nginx needs a manual rule — see plugin README.' );
 					$this->checkbox( $name, 'hide_rest_users', $s, 'Block REST user enumeration', 'Disables /wp-json/wp/v2/users for anonymous requests.' );
 					$this->checkbox( $name, 'block_author_scan', $s, 'Block ?author=N enumeration', 'Stops the author-ID redirect that leaks usernames.' );
 					?>
