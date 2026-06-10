@@ -137,6 +137,9 @@ function scshield_init() {
 
 	if ( is_admin() ) {
 		( new SCShield_Admin( $settings ) )->hooks();
+		// Capture premium plugin/theme "latest" versions whenever they're
+		// visible in the admin, so Decoy can use them automatically later.
+		add_action( 'admin_init', array( 'SCShield_Versions', 'learn' ) );
 	}
 }
 add_action( 'plugins_loaded', 'scshield_init' );

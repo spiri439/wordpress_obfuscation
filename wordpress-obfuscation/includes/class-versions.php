@@ -51,10 +51,10 @@ class SCShield_Versions {
 			}
 		}
 
-		// Manual overrides win (premium plugins WordPress can't see).
-		foreach ( self::manual() as $slug => $ver ) {
-			$map[ $slug ] = $ver;
-		}
+		// Auto-learned versions (captured whenever a component's update info was
+		// visible in the admin, incl. premium plugins) then manual overrides win.
+		$map = self::overlay( $map, self::learned() );
+		$map = self::overlay( $map, self::manual() );
 
 		set_transient( 'scshield_latest_plugins', $map, 12 * HOUR_IN_SECONDS );
 		return $map;
@@ -90,13 +90,73 @@ class SCShield_Versions {
 			}
 		}
 
-		// Manual overrides win (premium themes WordPress can't see).
-		foreach ( self::manual() as $slug => $ver ) {
-			$map[ $slug ] = $ver;
-		}
+		$map = self::overlay( $map, self::learned() );
+		$map = self::overlay( $map, self::manual() );
 
 		set_transient( 'scshield_latest_themes', $map, 12 * HOUR_IN_SECONDS );
 		return $map;
+	}
+
+	/**
+	 * Overlay $b onto $a: $b wins when it has a strictly newer (or any, for
+	 * manual) version. Manual entries always win; learned wins when newer.
+	 */
+	private static function overlay( $a, $b ) {
+		foreach ( $b as $slug => $ver ) {
+			if ( '' === $ver ) {
+				continue;
+			}
+			if ( empty( $a[ $slug ] ) || version_compare( $ver, $a[ $slug ], '>' ) ) {
+				$a[ $slug ] = $ver;
+			}
+		}
+		return $a;
+	}
+
+	/**
+	 * Versions the plugin has auto-captured from WordPress's update data over
+	 * time (see learn()). Persisted so premium plugins stay covered even when
+	 * their update info isn't currently in the transient.
+	 */
+	public static function learned() {
+		$v = get_option( 'scshield_learned', array() );
+		return is_array( $v ) ? $v : array();
+	}
+
+	/**
+	 * Capture any plugin/theme "new_version" currently visible in WordPress's
+	 * update data and remember the highest seen per slug. Cheap; runs in admin.
+	 */
+	public static function learn() {
+		$learned = self::learned();
+		$changed = false;
+
+		$plugins = get_site_transient( 'update_plugins' );
+		if ( is_object( $plugins ) && ! empty( $plugins->response ) && is_array( $plugins->response ) ) {
+			foreach ( $plugins->response as $file => $obj ) {
+				$slug = self::slug_from_plugin_file( $file );
+				$nv   = self::new_version( $obj );
+				if ( '' !== $slug && '' !== $nv && ( empty( $learned[ $slug ] ) || version_compare( $nv, $learned[ $slug ], '>' ) ) ) {
+					$learned[ $slug ] = $nv;
+					$changed          = true;
+				}
+			}
+		}
+
+		$themes = get_site_transient( 'update_themes' );
+		if ( is_object( $themes ) && ! empty( $themes->response ) && is_array( $themes->response ) ) {
+			foreach ( $themes->response as $slug => $obj ) {
+				$nv = self::new_version( $obj );
+				if ( '' !== $nv && ( empty( $learned[ $slug ] ) || version_compare( $nv, $learned[ $slug ], '>' ) ) ) {
+					$learned[ $slug ] = $nv;
+					$changed          = true;
+				}
+			}
+		}
+
+		if ( $changed ) {
+			update_option( 'scshield_learned', $learned, false );
+		}
 	}
 
 	/**
