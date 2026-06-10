@@ -89,16 +89,24 @@ class SCShield_Fingerprint {
 			return $classes;
 		}
 		foreach ( $classes as $i => $class ) {
-			if (
-				// WPBakery Page Builder (js_composer).
-				preg_match( '/^js-comp-ver-[\d.]+$/i', $class )
-				// Generic "<something>-ver-1.2.3" version class.
-				|| preg_match( '/-ver-\d[\d.]*$/i', $class )
-			) {
+			// Pure version markers with no styling value -> drop entirely.
+			if ( preg_match( '/^js-comp-ver-[\d.]+$/i', $class ) ) {
 				unset( $classes[ $i ] );
+				continue;
+			}
+			// "<name>-ver-1.2.3" -> keep "<name>", drop the version.
+			if ( preg_match( '/^(.*?)-ver-\d[\d.]*$/i', $class, $m ) ) {
+				$classes[ $i ] = $m[1];
+				continue;
+			}
+			// "<name>_8.30" / "us-core_8.31.1" (theme/plugin name + version).
+			// Keep the base name (themes may target it in CSS); strip the number.
+			if ( preg_match( '/^([a-z][\w-]*?)_\d+\.[\d.]+$/i', $class, $m ) ) {
+				$classes[ $i ] = $m[1];
+				continue;
 			}
 		}
-		return array_values( $classes );
+		return array_values( array_filter( $classes, 'strlen' ) );
 	}
 
 	/**

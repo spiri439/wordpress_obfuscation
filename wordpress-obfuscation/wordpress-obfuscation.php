@@ -34,7 +34,8 @@ function scshield_default_settings() {
 		// Fingerprint hardening.
 		'remove_generator'      => 1, // Strip <meta generator> + version from feeds/scripts.
 		'remove_query_versions' => 1, // Strip ?ver= from enqueued CSS/JS.
-		'strip_body_versions'   => 1, // Strip version classes from <body> (e.g. js-comp-ver-X).
+		'strip_body_versions'   => 1, // Strip version classes from <body> (e.g. Zephyr_8.30, js-comp-ver-X).
+		'clean_html_output'     => 1, // Buffer front-end HTML and strip plugin <meta generator> tags.
 		'block_readme_files'    => 1, // Block readme/changelog via .htaccess (Apache).
 		'hide_rest_users'       => 1, // Block the wp-json user-enumeration endpoint.
 		'block_author_scan'     => 1, // Block ?author=N enumeration redirects.
@@ -69,6 +70,7 @@ require_once SCSHIELD_DIR . 'includes/class-fingerprint.php';
 require_once SCSHIELD_DIR . 'includes/class-xmlrpc.php';
 require_once SCSHIELD_DIR . 'includes/class-wpcron.php';
 require_once SCSHIELD_DIR . 'includes/class-theme.php';
+require_once SCSHIELD_DIR . 'includes/class-htmlclean.php';
 require_once SCSHIELD_DIR . 'includes/class-admin.php';
 require_once SCSHIELD_DIR . 'includes/class-htaccess.php';
 
@@ -82,6 +84,7 @@ function scshield_init() {
 	( new SCShield_XMLRPC( $settings ) )->hooks();
 	( new SCShield_WPCron( $settings ) )->hooks();
 	( new SCShield_Theme( $settings ) )->hooks();
+	( new SCShield_HTMLClean( $settings ) )->hooks();
 
 	if ( is_admin() ) {
 		( new SCShield_Admin( $settings ) )->hooks();

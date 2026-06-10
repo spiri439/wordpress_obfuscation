@@ -11,7 +11,8 @@ A WordPress hardening plugin that reduces what mass scanners can fingerprint on 
 ### Fingerprint hardening
 - Removes the WordPress version (`<meta generator>`, feed generators, version readouts).
 - Strips `?ver=` from enqueued CSS/JS so plugin/theme versions aren't exposed in asset URLs.
-- Strips version-revealing classes from the `<body>` tag (e.g. WPBakery / js_composer's `js-comp-ver-6.7.0` and any `…-ver-1.2.3` class) — the "Body Tag" passive detection.
+- Strips version numbers from `<body>` classes — the "Body Tag" passive detection. Drops `js-comp-ver-6.7.0` (WPBakery), and removes the version from `Zephyr_8.30` / `us-core_8.31.1` / `…-ver-1.2.3` while keeping the base name so theme CSS keeps working.
+- Strips plugin-emitted `<meta name="generator">` tags that core filters miss (e.g. `Powered by Slider Revolution 6.7.35`, WPBakery) by buffering the front-end HTML.
 - Blocks direct access to `readme.txt`, `changelog.txt`, `license.txt`, `readme.html` (Apache; Nginx config below).
 - Disables the REST user-enumeration endpoint (`/wp-json/wp/v2/users`) for anonymous visitors.
 - Blocks `?author=N` enumeration that leaks usernames.
@@ -88,6 +89,14 @@ location = /wp-cron.php {
 ```
 
 The plugin's PHP-level XML-RPC and WP-Cron handling work on Nginx regardless; only the static-file `.htaccess` block needs the manual rule above.
+
+## "I enabled it but the version is still showing"
+
+Almost always one of these:
+
+1. **Page caching.** If your site runs a full-page cache (LiteSpeed Cache, WP Rocket, Cloudflare APO, Varnish…), scanners read the *cached* HTML generated before the plugin ran. The PHP-level strips (body classes, generator tags, `?ver=`) only apply to freshly generated pages. **Purge the cache** after activating or changing settings. LiteSpeed: *LiteSpeed Cache → Toolbox → Purge All*.
+2. **Plugin not active.** Confirm the plugin is uploaded to `wp-content/plugins/` and activated.
+3. **Static-file leaks** (`style.css` `Version:`, `readme.txt`) — these need the *Strip theme version* toggle and the `.htaccess`/Nginx rules respectively; the body/generator strips don't cover them.
 
 ## Limitations / honest notes
 

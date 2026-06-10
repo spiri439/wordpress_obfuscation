@@ -53,7 +53,7 @@ class SCShield_Admin {
 		$out = scshield_default_settings();
 		$input = is_array( $input ) ? $input : array();
 
-		foreach ( array( 'remove_generator', 'remove_query_versions', 'strip_body_versions', 'block_readme_files', 'hide_rest_users', 'block_author_scan', 'strip_theme_version', 'disable_wp_cron', 'block_wpcron_external' ) as $bool ) {
+		foreach ( array( 'remove_generator', 'remove_query_versions', 'strip_body_versions', 'clean_html_output', 'block_readme_files', 'hide_rest_users', 'block_author_scan', 'strip_theme_version', 'disable_wp_cron', 'block_wpcron_external' ) as $bool ) {
 			$out[ $bool ] = empty( $input[ $bool ] ) ? 0 : 1;
 		}
 
@@ -101,7 +101,8 @@ class SCShield_Admin {
 					<?php
 					$this->checkbox( $name, 'remove_generator', $s, 'Remove WordPress version', 'Strips the &lt;meta generator&gt; tag, feed generator, and version readouts.' );
 					$this->checkbox( $name, 'remove_query_versions', $s, 'Remove ?ver= from CSS/JS', 'Hides plugin/theme versions in asset URLs. Note: also affects cache-busting on updates.' );
-					$this->checkbox( $name, 'strip_body_versions', $s, 'Strip version classes from &lt;body&gt;', 'Removes version-revealing CSS classes on the body tag, e.g. WPBakery / js_composer\'s <code>js-comp-ver-6.7.0</code> and any <code>…-ver-1.2.3</code> class. Read by WPScan\'s "Body Tag" detection.' );
+					$this->checkbox( $name, 'strip_body_versions', $s, 'Strip version classes from &lt;body&gt;', 'Removes version numbers from body classes read by WPScan\'s "Body Tag" detection: <code>js-comp-ver-6.7.0</code> (dropped), and the version number in <code>Zephyr_8.30</code> / <code>us-core_8.31.1</code> / <code>…-ver-1.2.3</code> (base name kept so theme CSS still works).' );
+					$this->checkbox( $name, 'clean_html_output', $s, 'Strip plugin &lt;meta generator&gt; tags', 'Buffers the front-end HTML and removes plugin-emitted generator tags that core filters miss, e.g. <code>Powered by Slider Revolution 6.7.35</code> and WPBakery. Skips admin/AJAX/REST/feeds.' );
 					$this->checkbox( $name, 'block_readme_files', $s, 'Block readme / changelog files (Apache)', 'Denies direct access to readme.txt, changelog.txt, license.txt, readme.html via .htaccess. Nginx needs a manual rule — see plugin README.' );
 					$this->checkbox( $name, 'hide_rest_users', $s, 'Block REST user enumeration', 'Disables /wp-json/wp/v2/users for anonymous requests.' );
 					$this->checkbox( $name, 'block_author_scan', $s, 'Block ?author=N enumeration', 'Stops the author-ID redirect that leaks usernames.' );
