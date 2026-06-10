@@ -53,8 +53,8 @@ class SCShield_WPCron {
 	 * authorized system cron (with ?doing_wp_cron=<secret>) are allowed.
 	 */
 	public function guard_wpcron() {
-		$script = isset( $_SERVER['SCRIPT_NAME'] ) ? $_SERVER['SCRIPT_NAME'] : '';
-		$php_self = isset( $_SERVER['PHP_SELF'] ) ? $_SERVER['PHP_SELF'] : '';
+		$script = isset( $_SERVER['SCRIPT_NAME'] ) ? sanitize_text_field( wp_unslash( $_SERVER['SCRIPT_NAME'] ) ) : '';
+		$php_self = isset( $_SERVER['PHP_SELF'] ) ? sanitize_text_field( wp_unslash( $_SERVER['PHP_SELF'] ) ) : '';
 
 		$is_wpcron = ( false !== strpos( $script, 'wp-cron.php' ) )
 			|| ( false !== strpos( $php_self, 'wp-cron.php' ) )
@@ -67,13 +67,16 @@ class SCShield_WPCron {
 		$secret = isset( $this->s['wpcron_secret'] ) ? (string) $this->s['wpcron_secret'] : '';
 
 		// No secret configured -> allow only same-host loopback requests.
-		$remote = isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : '';
-		$server = isset( $_SERVER['SERVER_ADDR'] ) ? $_SERVER['SERVER_ADDR'] : '';
+		$remote = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+		$server = isset( $_SERVER['SERVER_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['SERVER_ADDR'] ) ) : '';
 		$is_loopback = in_array( $remote, array( '127.0.0.1', '::1' ), true )
 			|| ( '' !== $server && $remote === $server );
 
 		if ( '' !== $secret ) {
-			$provided = isset( $_GET['scshield_cron'] ) ? (string) $_GET['scshield_cron'] : '';
+			// This is a server-cron token check, not a form submission, so a
+			// WordPress nonce does not apply; the secret itself authorizes it.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$provided = isset( $_GET['scshield_cron'] ) ? sanitize_text_field( wp_unslash( $_GET['scshield_cron'] ) ) : '';
 			if ( hash_equals( $secret, $provided ) ) {
 				return; // authorized system cron
 			}

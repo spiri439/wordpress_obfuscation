@@ -255,11 +255,11 @@ class SCShield_CompFiles {
 	 * Targeted str_replace keeps the change safe and reversible-on-update.
 	 */
 	private function rewrite( $file, $from, $to, $head_only ) {
-		if ( ! file_exists( $file ) || ! is_writable( $file ) ) {
+		if ( ! SCShield_FS::exists( $file ) || ! SCShield_FS::is_writable( $file ) ) {
 			return false;
 		}
-		$contents = file_get_contents( $file );
-		if ( false === $contents || '' === $contents || false === strpos( $contents, $from ) ) {
+		$contents = SCShield_FS::get( $file );
+		if ( '' === $contents || false === strpos( $contents, $from ) ) {
 			return false;
 		}
 
@@ -279,7 +279,7 @@ class SCShield_CompFiles {
 		if ( $new === $contents ) {
 			return false;
 		}
-		return false !== file_put_contents( $file, $new );
+		return false !== SCShield_FS::put( $file, $new );
 	}
 
 	/**

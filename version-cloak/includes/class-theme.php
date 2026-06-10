@@ -141,11 +141,8 @@ class SCShield_Theme {
 	 * Read the current `Version:` header value from a style.css, or '' if none.
 	 */
 	private function read_version( $file ) {
-		if ( ! is_readable( $file ) ) {
-			return '';
-		}
-		$contents = file_get_contents( $file );
-		if ( false === $contents || '' === $contents ) {
+		$contents = SCShield_FS::get( $file );
+		if ( '' === $contents ) {
 			return '';
 		}
 		if ( preg_match( '/^[ \t\/*#@]*Version:[ \t]*(\S.*)$/mi', $contents, $m ) ) {
@@ -226,12 +223,12 @@ class SCShield_Theme {
 	 * it). Leaves the rest of the stylesheet untouched. No-op if not writable.
 	 */
 	private function set_version( $file, $version ) {
-		if ( ! is_writable( $file ) ) {
+		if ( ! SCShield_FS::is_writable( $file ) ) {
 			return false;
 		}
 
-		$contents = file_get_contents( $file );
-		if ( false === $contents || '' === $contents ) {
+		$contents = SCShield_FS::get( $file );
+		if ( '' === $contents ) {
 			return false;
 		}
 
@@ -252,6 +249,6 @@ class SCShield_Theme {
 		}
 
 		// Write back, preserving everything else verbatim.
-		return false !== file_put_contents( $file, $new );
+		return false !== SCShield_FS::put( $file, $new );
 	}
 }

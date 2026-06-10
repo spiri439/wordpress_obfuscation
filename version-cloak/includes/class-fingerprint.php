@@ -271,7 +271,11 @@ class SCShield_Fingerprint {
 		if ( is_admin() ) {
 			return;
 		}
+		// Read-only inspection of a public query var for a redirect decision;
+		// not form processing, so a nonce does not apply.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		if ( isset( $_GET['author'] ) && ! is_user_logged_in() ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			$author = sanitize_text_field( wp_unslash( $_GET['author'] ) );
 			// Only block the numeric ID form used for enumeration.
 			if ( '' !== $author && is_numeric( $author ) ) {

@@ -121,6 +121,7 @@ function scshield_get_settings() {
 }
 
 // Load modules.
+require_once SCSHIELD_DIR . 'includes/class-fs.php';
 require_once SCSHIELD_DIR . 'includes/class-versions.php';
 require_once SCSHIELD_DIR . 'includes/class-fingerprint.php';
 require_once SCSHIELD_DIR . 'includes/class-xmlrpc.php';

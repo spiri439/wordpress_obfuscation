@@ -8,7 +8,7 @@ Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Reduce what automated scanners can fingerprint on your site: hide or decoy plugin, theme and WordPress core versions, neutralize XML-RPC, and lock down WP-Cron.
+Hide or decoy plugin, theme and core versions from scanners. Neutralize XML-RPC and lock down WP-Cron.
 
 == Description ==
 

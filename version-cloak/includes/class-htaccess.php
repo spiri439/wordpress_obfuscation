@@ -53,7 +53,7 @@ class SCShield_Htaccess {
 		require_once ABSPATH . 'wp-admin/includes/misc.php';
 
 		$htaccess = self::path();
-		if ( file_exists( $htaccess ) && is_writable( $htaccess ) ) {
+		if ( SCShield_FS::exists( $htaccess ) && SCShield_FS::is_writable( $htaccess ) ) {
 			insert_with_markers( $htaccess, self::MARKER, array() );
 		}
 	}
@@ -111,12 +111,12 @@ class SCShield_Htaccess {
 	}
 
 	private static function ensure_writable( $htaccess ) {
-		if ( file_exists( $htaccess ) ) {
-			return is_writable( $htaccess );
+		if ( SCShield_FS::exists( $htaccess ) ) {
+			return SCShield_FS::is_writable( $htaccess );
 		}
 		// Try to create it in a writable home dir.
 		$dir = dirname( $htaccess );
-		return is_writable( $dir );
+		return SCShield_FS::is_writable( $dir );
 	}
 
 	private static function is_apache() {
