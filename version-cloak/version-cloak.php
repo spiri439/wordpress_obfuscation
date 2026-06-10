@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name:       Version Cloak
- * Plugin URI:        https://vesrl.ro
+ * Plugin URI:        https://github.com/spiri439/wordpress_obfuscation
  * Description:        Reduces fingerprinting by mass scanners: hides plugin/core version leaks, neutralizes XML-RPC, and locks down WP-Cron. Hardening layer — NOT a substitute for keeping plugins updated.
  * Version:           1.0.0
  * Requires at least: 5.0
