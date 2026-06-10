@@ -4,7 +4,7 @@ A WordPress hardening plugin that reduces what mass scanners can fingerprint on 
 
 > **Read this first.** Obfuscation lowers the noise from opportunistic, version-matching scanners (the bots that scrape `readme.txt`, hit `/wp-json/wp/v2/users`, and spray `xmlrpc.php`). It does **not** patch vulnerable code. A scanner that actually exploits a bug succeeds whether or not the version string is visible. **Keep your plugins, themes, and core updated.** This plugin is a complementary layer, not a substitute for patching.
 
-— Author: **spiri439** · Site: [vesrl.ro](https://vesrl.ro)
+— Author: **spiri439** · Site: [vesrl.ro](https://vesrl.ro) · Requires WordPress 5.0+ and PHP 5.6+
 
 ## What it does
 

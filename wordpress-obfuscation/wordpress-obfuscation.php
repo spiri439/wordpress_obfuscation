@@ -5,7 +5,7 @@
  * Description:        Reduces fingerprinting by mass scanners: hides plugin/core version leaks, neutralizes XML-RPC, and locks down WP-Cron. Hardening layer — NOT a substitute for keeping plugins updated.
  * Version:           1.0.0
  * Requires at least: 5.0
- * Requires PHP:      7.2
+ * Requires PHP:      5.6
  * Author:            spiri439
  * Author URI:        https://vesrl.ro
  * License:           GPL-2.0-or-later
@@ -19,6 +19,18 @@
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
+}
+
+// Minimum PHP guard: bail gracefully on very old PHP instead of fataling.
+// The plugin itself is written to run on PHP 5.6+ (no 7.0+ syntax).
+if ( version_compare( PHP_VERSION, '5.6', '<' ) ) {
+	add_action( 'admin_notices', 'scshield_php_notice' );
+	if ( ! function_exists( 'scshield_php_notice' ) ) {
+		function scshield_php_notice() {
+			echo '<div class="notice notice-error"><p>WordPress Obfuscation requires PHP 5.6 or newer. It has been disabled.</p></div>';
+		}
+	}
+	return; // Stop loading the rest of the plugin.
 }
 
 define( 'SCSHIELD_VERSION', '1.0.0' );
