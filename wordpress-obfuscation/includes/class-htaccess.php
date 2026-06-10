@@ -77,21 +77,25 @@ class SCShield_Htaccess {
 		$rewrite = array();
 
 		if ( $readme ) {
-			// Filenames scanners read for versions: readme/changelog/license, and
-			// plugin "release log" files (e.g. Slider Revolution's release_log.html).
-			$rules[] = '<FilesMatch "(?i)^(readme|changelog|change-?log|changes|license|readme-[a-z]+|release[_-]?log)\.(txt|html|md)$">';
+			// Plugin/theme static version files scanners read (readme/changelog/
+			// release_log). FilesMatch matches by basename anywhere under the site.
+			$rules[] = '<FilesMatch "(?i)^(readme|changelog|change-?log|changes|release[_-]?log)\.(txt|html|md)$">';
 			$rules[] = '    Require all denied';
 			$rules[] = '</FilesMatch>';
 			$rewrite[] = '    RewriteRule (?i)^wp-content/.*/(readme|changelog|change-?log|changes|release[_-]?log)\.(txt|html|md)$ - [F,L]';
-			$rewrite[] = '    RewriteRule (?i)^readme\.html$ - [F,L]';
-			$rewrite[] = '    RewriteRule (?i)^license\.txt$ - [F,L]';
 		}
 
 		if ( $install ) {
-			// install.php leaks the core version (its assets carry ?ver) and runs
-			// before plugins load, so PHP filters can't touch it. It's unneeded on
-			// a live site. NOT upgrade.php — that's required after core updates.
-			$rewrite[] = '    RewriteRule (?i)^wp-admin/install\.php$ - [F,L]';
+			// WordPress core version leaks, tied to the WP-version mode.
+			// /readme.html ("Version x.y") and /license.txt: always safe to block.
+			$rewrite[] = '    RewriteRule (?i)^readme\.html$ - [F,L]';
+			$rewrite[] = '    RewriteRule (?i)^license\.txt$ - [F,L]';
+			// install.php / upgrade.php enqueue admin CSS with ?ver=<core version>
+			// and run before plugins load (PHP filters can't touch them). Block
+			// them ONLY for visitors without a logged-in cookie, so scanners are
+			// denied but an admin running a real core update still gets through.
+			$rewrite[] = '    RewriteCond %{HTTP_COOKIE} !wordpress_logged_in_ [NC]';
+			$rewrite[] = '    RewriteRule (?i)^wp-admin/(install|upgrade)\.php$ - [F,L]';
 		}
 
 		if ( $rewrite ) {
