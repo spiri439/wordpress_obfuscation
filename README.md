@@ -21,6 +21,19 @@ A WordPress hardening plugin that reduces what mass scanners can fingerprint on 
 - Blocks `?author=N` enumeration that leaks usernames.
 - **(Opt-in)** Strips the `Version:` header from the active/parent theme's `style.css` — the line WPScan's "Style" detection reads. See caveats below.
 
+### Report plugins & themes as their latest versions
+
+The same "look patched" logic, extended to every installed component. Enable **"Report plugins & themes as their latest versions"** and instead of *removing* version tells, the plugin rewrites them to each component's **latest** release — detected from WordPress's own `update_plugins` / `update_themes` data (no external calls, cached 12h). It covers:
+
+- **Asset `?ver=`** — `…/plugins/<slug>/x.js?ver=` becomes the slug's latest version.
+- **Inline-CSS asset URLs** — same, inside `<style>`/`@font-face` (via the HTML cleaner).
+- **`<body>` classes** — `Zephyr_8.30` → `Zephyr_<latest>`, `js-comp-ver-6.7.0` → latest.
+- **Theme `style.css` `Version:`** — written to the latest (requires *Strip theme version* enabled and a writable file).
+
+Components the plugin can't map (the slug isn't in WordPress's update data) fall back to **removal**, so the real version is never leaked. Plugin-emitted `<meta generator>` strings (e.g. Slider Revolution) are still *removed*, not version-bumped.
+
+> Bots version-match: a component reporting its latest release looks patched and gets skipped, whereas an old version invites probing. This is obfuscation only — it doesn't update anything.
+
 ### Theme version (style.css)
 
 Scanners like WPScan fetch `style.css` directly and parse its `Version:` header (e.g. `Version: 8.30`). `style.css` is a **static file** the webserver serves to browsers, so a plugin can't intercept the request — the only way to remove the version is to **edit the file**. The opt-in *Strip theme version* toggle does this:

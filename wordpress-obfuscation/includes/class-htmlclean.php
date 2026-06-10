@@ -62,15 +62,33 @@ class SCShield_HTMLClean {
 			$html
 		);
 
-		// Strip ?ver= from asset URLs left inside inline CSS/markup (e.g.
+		// Handle ?ver= on asset URLs left inside inline CSS/markup (e.g.
 		// @font-face url(".../fa-solid-900.woff2?ver=8.30")). The enqueue filter
 		// only covers <link>/<script> tags, not URLs embedded in CSS text.
-		$html = preg_replace(
-			'/(\.(?:css|js|woff2?|ttf|otf|eot|svg|png|jpe?g|gif|webp))\?ver=[0-9A-Za-z.\-]+/i',
-			'$1',
-			$html
-		);
+		$pattern = '#((?:[^\s"\'()]+)\.(?:css|js|woff2?|ttf|otf|eot|svg|png|jpe?g|gif|webp))\?ver=[0-9A-Za-z.\-]+#i';
+		if ( ! empty( $this->s['spoof_components_latest'] ) ) {
+			// Rewrite to the owning component's latest version (looks patched);
+			// remove the version when the component is unknown.
+			$html = preg_replace_callback(
+				$pattern,
+				array( $this, 'spoof_ver_in_url' ),
+				$html
+			);
+		} else {
+			// Strip the version entirely.
+			$html = preg_replace( $pattern, '$1', $html );
+		}
 
 		return $html;
+	}
+
+	/**
+	 * Callback for ?ver= rewriting in inline URLs: append the owning
+	 * component's latest version, or drop ?ver= if the component is unknown.
+	 */
+	public function spoof_ver_in_url( $m ) {
+		$url    = $m[1];
+		$latest = SCShield_Versions::latest_for_url( $url );
+		return ( '' !== $latest ) ? $url . '?ver=' . $latest : $url;
 	}
 }

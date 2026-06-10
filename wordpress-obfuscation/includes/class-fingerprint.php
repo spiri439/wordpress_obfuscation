@@ -25,8 +25,9 @@ class SCShield_Fingerprint {
 			$this->strip_generator();
 		}
 		if ( ! empty( $this->s['remove_query_versions'] ) ) {
-			add_filter( 'style_loader_src', array( $this, 'strip_ver_query' ), 9999 );
-			add_filter( 'script_loader_src', array( $this, 'strip_ver_query' ), 9999 );
+			$cb = ! empty( $this->s['spoof_components_latest'] ) ? 'spoof_ver_query' : 'strip_ver_query';
+			add_filter( 'style_loader_src', array( $this, $cb ), 9999 );
+			add_filter( 'script_loader_src', array( $this, $cb ), 9999 );
 		}
 		if ( ! empty( $this->s['strip_body_versions'] ) ) {
 			// Run late so we strip classes other plugins/themes have already added.
@@ -171,6 +172,22 @@ class SCShield_Fingerprint {
 	}
 
 	/**
+	 * Rewrite ?ver= to the asset's component LATEST version (so it looks
+	 * patched). Unknown components fall back to removing the version, never
+	 * leaking the real one.
+	 */
+	public function spoof_ver_query( $src ) {
+		if ( strpos( $src, 'ver=' ) === false ) {
+			return $src;
+		}
+		$latest = SCShield_Versions::latest_for_url( $src );
+		if ( '' !== $latest ) {
+			return add_query_arg( 'ver', $latest, $src );
+		}
+		return remove_query_arg( 'ver', $src );
+	}
+
+	/**
 	 * Remove version-revealing classes from the <body> tag. Plugins/themes leak
 	 * their version here for scanners to read passively, e.g. WPBakery / js_composer
 	 * adds "js-comp-ver-6.7.0". Generic: also drops any "...-ver-1.2.3" class.
@@ -181,25 +198,41 @@ class SCShield_Fingerprint {
 		if ( ! is_array( $classes ) ) {
 			return $classes;
 		}
+		$spoof = ! empty( $this->s['spoof_components_latest'] );
+
 		foreach ( $classes as $i => $class ) {
-			// Pure version markers with no styling value -> drop entirely.
+			// WPBakery / js_composer "js-comp-ver-6.7.0".
 			if ( preg_match( '/^js-comp-ver-[\d.]+$/i', $class ) ) {
-				unset( $classes[ $i ] );
+				$latest = $spoof ? SCShield_Versions::latest_plugin( 'js_composer' ) : '';
+				$classes[ $i ] = ( '' !== $latest ) ? 'js-comp-ver-' . $latest : '';
 				continue;
 			}
-			// "<name>-ver-1.2.3" -> keep "<name>", drop the version.
+			// "<name>-ver-1.2.3" -> keep "<name>" (+ latest if known).
 			if ( preg_match( '/^(.*?)-ver-\d[\d.]*$/i', $class, $m ) ) {
-				$classes[ $i ] = $m[1];
+				$latest = $spoof ? $this->latest_for_component_name( $m[1] ) : '';
+				$classes[ $i ] = ( '' !== $latest ) ? $m[1] . '-ver-' . $latest : $m[1];
 				continue;
 			}
 			// "<name>_8.30" / "us-core_8.31.1" (theme/plugin name + version).
-			// Keep the base name (themes may target it in CSS); strip the number.
 			if ( preg_match( '/^([a-z][\w-]*?)_\d+\.[\d.]+$/i', $class, $m ) ) {
-				$classes[ $i ] = $m[1];
+				$latest = $spoof ? $this->latest_for_component_name( $m[1] ) : '';
+				$classes[ $i ] = ( '' !== $latest ) ? $m[1] . '_' . $latest : $m[1];
 				continue;
 			}
 		}
 		return array_values( array_filter( $classes, 'strlen' ) );
+	}
+
+	/**
+	 * Best-effort: map a body-class base name (e.g. "Zephyr", "js_composer")
+	 * to a known theme or plugin's latest version. '' when unknown.
+	 */
+	private function latest_for_component_name( $name ) {
+		$theme = SCShield_Versions::latest_theme( $name );
+		if ( '' !== $theme ) {
+			return $theme;
+		}
+		return SCShield_Versions::latest_plugin( $name );
 	}
 
 	/**

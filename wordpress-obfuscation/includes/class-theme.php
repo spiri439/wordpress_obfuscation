@@ -42,9 +42,19 @@ class SCShield_Theme {
 	 * theme's style.css. Returns the list of files changed.
 	 */
 	public function strip() {
+		$spoof = ! empty( $this->s['spoof_components_latest'] );
+		if ( $spoof ) {
+			// This runs only on save/update/switch — refresh so we write the
+			// genuinely-latest version, not a stale cached one.
+			SCShield_Versions::flush();
+		}
+		$themes = $spoof ? SCShield_Versions::themes() : array();
+
 		$changed = array();
-		foreach ( $this->target_files() as $file ) {
-			if ( $this->blank_version( $file ) ) {
+		foreach ( $this->target_map() as $slug => $file ) {
+			// Decoy mode writes the latest version for this theme; otherwise blank.
+			$version = ( $spoof && isset( $themes[ $slug ] ) ) ? $themes[ $slug ] : '';
+			if ( $this->set_version( $file, $version ) ) {
 				$changed[] = $file;
 			}
 		}
@@ -52,28 +62,31 @@ class SCShield_Theme {
 	}
 
 	/**
-	 * style.css of the active stylesheet and its template (parent), de-duped.
+	 * [ stylesheet-slug => style.css path ] for the active and parent theme.
 	 */
-	private function target_files() {
-		$dirs = array( get_stylesheet_directory(), get_template_directory() );
-		$dirs = array_unique( array_filter( $dirs ) );
-
-		$files = array();
-		foreach ( $dirs as $dir ) {
+	private function target_map() {
+		$map = array();
+		$pairs = array(
+			get_stylesheet() => get_stylesheet_directory(),
+			get_template()   => get_template_directory(),
+		);
+		foreach ( $pairs as $slug => $dir ) {
+			if ( ! $dir ) {
+				continue;
+			}
 			$css = trailingslashit( $dir ) . 'style.css';
-			if ( file_exists( $css ) ) {
-				$files[] = $css;
+			if ( file_exists( $css ) && ! isset( $map[ $slug ] ) ) {
+				$map[ $slug ] = $css;
 			}
 		}
-		return $files;
+		return $map;
 	}
 
 	/**
-	 * Remove the value after `Version:` in the file header comment only.
-	 * Leaves the rest of the stylesheet untouched. No-op if not writable or
-	 * if the value is already blank.
+	 * Set the `Version:` header value in the file header comment only ('' blanks
+	 * it). Leaves the rest of the stylesheet untouched. No-op if not writable.
 	 */
-	private function blank_version( $file ) {
+	private function set_version( $file, $version ) {
 		if ( ! is_writable( $file ) ) {
 			return false;
 		}
@@ -84,11 +97,13 @@ class SCShield_Theme {
 		}
 
 		// Match the header line `Version: 8.30` (case-insensitive), first
-		// occurrence only, and blank the value. The header lives in the opening
-		// comment block, so only the first match matters.
-		$new = preg_replace(
+		// occurrence only. Use a callback so the replacement version can't be
+		// interpreted as a regex backreference.
+		$new = preg_replace_callback(
 			'/^([ \t\/*#@]*Version:)[ \t]*\S.*$/mi',
-			'$1',
+			function ( $m ) use ( $version ) {
+				return $m[1] . ( '' !== $version ? ' ' . $version : '' );
+			},
 			$contents,
 			1
 		);

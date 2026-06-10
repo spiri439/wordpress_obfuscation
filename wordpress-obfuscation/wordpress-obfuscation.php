@@ -48,6 +48,7 @@ function scshield_default_settings() {
 		'wp_spoof_use_latest'   => 0,  // Decoy = latest WP version (looks patched -> deters bots).
 		'wp_version_spoof'      => '', // Manual decoy version; fallback when "use latest" is off/unavailable.
 		'remove_query_versions' => 1, // Strip ?ver= from enqueued CSS/JS.
+		'spoof_components_latest' => 0, // Rewrite plugin/theme versions to their LATEST instead of removing them.
 		'strip_body_versions'   => 1, // Strip version classes from <body> (e.g. Zephyr_8.30, js-comp-ver-X).
 		'clean_html_output'     => 1, // Buffer front-end HTML and strip plugin <meta generator> tags.
 		'block_readme_files'    => 1, // Block readme/changelog via .htaccess (Apache).
@@ -80,6 +81,7 @@ function scshield_get_settings() {
 }
 
 // Load modules.
+require_once SCSHIELD_DIR . 'includes/class-versions.php';
 require_once SCSHIELD_DIR . 'includes/class-fingerprint.php';
 require_once SCSHIELD_DIR . 'includes/class-xmlrpc.php';
 require_once SCSHIELD_DIR . 'includes/class-wpcron.php';

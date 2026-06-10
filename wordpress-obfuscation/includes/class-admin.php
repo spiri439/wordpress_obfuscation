@@ -53,7 +53,7 @@ class SCShield_Admin {
 		$out = scshield_default_settings();
 		$input = is_array( $input ) ? $input : array();
 
-		foreach ( array( 'remove_generator', 'wp_spoof_use_latest', 'remove_query_versions', 'strip_body_versions', 'clean_html_output', 'block_readme_files', 'hide_rest_users', 'block_author_scan', 'strip_theme_version', 'disable_wp_cron', 'block_wpcron_external' ) as $bool ) {
+		foreach ( array( 'remove_generator', 'wp_spoof_use_latest', 'remove_query_versions', 'spoof_components_latest', 'strip_body_versions', 'clean_html_output', 'block_readme_files', 'hide_rest_users', 'block_author_scan', 'strip_theme_version', 'disable_wp_cron', 'block_wpcron_external' ) as $bool ) {
 			$out[ $bool ] = empty( $input[ $bool ] ) ? 0 : 1;
 		}
 
@@ -68,8 +68,9 @@ class SCShield_Admin {
 		// Keep .htaccess in sync after settings change.
 		SCShield_Htaccess::write( $out );
 
-		// Re-resolve the latest WP version on next load (picks up fresh data).
+		// Re-resolve latest versions on next load (picks up fresh update data).
 		delete_transient( 'scshield_latest_wp' );
+		SCShield_Versions::flush();
 
 		// Apply the theme-version strip immediately when enabled, and report
 		// back if the style.css files weren't writable so the user isn't misled.
@@ -117,6 +118,7 @@ class SCShield_Admin {
 					</tr>
 					<?php
 					$this->checkbox( $name, 'remove_query_versions', $s, 'Remove ?ver= from CSS/JS', 'Hides plugin/theme versions in asset URLs. Note: also affects cache-busting on updates.' );
+					$this->checkbox( $name, 'spoof_components_latest', $s, 'Report plugins &amp; themes as their latest versions', 'Instead of <em>removing</em> plugin/theme versions, rewrite them to each component\'s <strong>latest</strong> release (auto-detected from WordPress\'s update data). Affects asset <code>?ver=</code>, body classes, inline-CSS asset URLs, and (if "Strip theme version" is on) the theme <code>style.css</code> header. Makes every component look patched so scanners move on. Unknown components fall back to removal.' );
 					$this->checkbox( $name, 'strip_body_versions', $s, 'Strip version classes from &lt;body&gt;', 'Removes version numbers from body classes read by WPScan\'s "Body Tag" detection: <code>js-comp-ver-6.7.0</code> (dropped), and the version number in <code>Zephyr_8.30</code> / <code>us-core_8.31.1</code> / <code>…-ver-1.2.3</code> (base name kept so theme CSS still works).' );
 					$this->checkbox( $name, 'clean_html_output', $s, 'Strip plugin &lt;meta generator&gt; tags', 'Buffers the front-end HTML and removes plugin-emitted generator tags that core filters miss, e.g. <code>Powered by Slider Revolution 6.7.35</code> and WPBakery. Skips admin/AJAX/REST/feeds.' );
 					$this->checkbox( $name, 'block_readme_files', $s, 'Block readme / changelog files (Apache)', 'Denies direct access to readme.txt, changelog.txt, license.txt, readme.html via .htaccess. Nginx needs a manual rule — see plugin README.' );
