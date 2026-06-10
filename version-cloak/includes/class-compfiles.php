@@ -200,7 +200,7 @@ class SCShield_CompFiles {
 			return $found;
 		}
 		$set     = array_flip( self::$files ); // lowercase known names
-		$entries = @scandir( $dir );
+		$entries = scandir( $dir ); // $dir already verified as a directory above
 		if ( ! is_array( $entries ) ) {
 			return $found;
 		}
