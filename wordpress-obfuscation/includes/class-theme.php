@@ -86,6 +86,22 @@ class SCShield_Theme {
 	}
 
 	/**
+	 * Restore the real version into style.css (revert masking). Called when
+	 * "Mask theme version" is turned off and on deactivation.
+	 */
+	public function restore() {
+		$reals = get_option( self::REAL_OPT, array() );
+		$reals = is_array( $reals ) ? $reals : array();
+		$reverted = array();
+		foreach ( $this->target_map() as $slug => $file ) {
+			if ( ! empty( $reals[ $slug ] ) && $this->set_version( $file, $reals[ $slug ] ) ) {
+				$reverted[] = $file;
+			}
+		}
+		return $reverted;
+	}
+
+	/**
 	 * After a genuine theme update/switch, drop the stored real versions for the
 	 * active theme so strip() re-captures the new genuine version, then re-mask.
 	 */

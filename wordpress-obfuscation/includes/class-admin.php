@@ -86,22 +86,30 @@ class SCShield_Admin {
 		delete_transient( 'scshield_latest_wp' );
 		SCShield_Versions::flush();
 
-		// Apply the theme-version strip immediately when enabled, and report
-		// back if the style.css files weren't writable so the user isn't misled.
+		// Theme style.css: mask when enabled, otherwise restore the real version.
+		$theme = new SCShield_Theme( $out );
 		if ( ! empty( $out['strip_theme_version'] ) ) {
-			$changed = ( new SCShield_Theme( $out ) )->strip();
+			$changed = $theme->strip();
 			if ( empty( $changed ) ) {
-				add_settings_error( SCSHIELD_OPTION, 'theme_strip', 'Theme version stripping is enabled, but no style.css was writable (or it was already blank). Check file permissions on your theme.', 'warning' );
+				add_settings_error( SCSHIELD_OPTION, 'theme_strip', 'Theme version masking is enabled, but no style.css was writable (or it was already set). Check file permissions on your theme.', 'warning' );
 			} else {
-				add_settings_error( SCSHIELD_OPTION, 'theme_strip', 'Stripped the Version header from ' . count( $changed ) . ' style.css file(s). Remember: update the theme — this only hides the version.', 'updated' );
+				add_settings_error( SCSHIELD_OPTION, 'theme_strip', 'Updated the Version header in ' . count( $changed ) . ' style.css file(s).', 'updated' );
 			}
+		} else {
+			$theme->restore();
 		}
 
-		// Decoy mode: rewrite plugin/theme static version files (readme, changelog,
-		// release_log) and asset banner comments to the latest version.
+		// Plugin/theme static files: Decoy rewrites to latest; Off/Obfuscate
+		// restores the real versions so nothing stays artificially bumped.
+		$compfiles = new SCShield_CompFiles( $out );
 		if ( ! empty( $out['mask_version_files'] ) ) {
-			$n = count( ( new SCShield_CompFiles( $out ) )->apply() );
+			$n = count( $compfiles->apply() );
 			add_settings_error( SCSHIELD_OPTION, 'compfiles', 'Decoy: rewrote version strings in ' . $n . ' plugin/theme file(s) to their latest versions.', 'updated' );
+		} else {
+			$r = count( $compfiles->restore() );
+			if ( $r ) {
+				add_settings_error( SCSHIELD_OPTION, 'compfiles', 'Restored real version strings in ' . $r . ' plugin/theme file(s).', 'updated' );
+			}
 		}
 
 		return $out;

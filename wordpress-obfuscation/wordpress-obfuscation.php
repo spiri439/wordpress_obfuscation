@@ -156,9 +156,13 @@ function scshield_activate() {
 register_activation_hook( __FILE__, 'scshield_activate' );
 
 /**
- * Deactivation: clean our .htaccess block so the site is never left broken.
+ * Deactivation: revert all file edits to the real versions and clean our
+ * .htaccess block, so disabling the plugin returns the site to normal.
  */
 function scshield_deactivate() {
+	$settings = scshield_get_settings();
+	( new SCShield_CompFiles( $settings ) )->restore();
+	( new SCShield_Theme( $settings ) )->restore();
 	SCShield_Htaccess::remove();
 }
 register_deactivation_hook( __FILE__, 'scshield_deactivate' );

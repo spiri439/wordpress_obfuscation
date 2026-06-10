@@ -60,16 +60,20 @@ class SCShield_CompFiles {
 
 		SCShield_Versions::force_refresh(); // re-query wordpress.org for real latest
 		$changed = array();
+		$record  = array();
 
 		foreach ( $this->targets() as $t ) {
 			if ( '' === $t['installed'] || '' === $t['latest'] || $t['installed'] === $t['latest'] ) {
 				continue; // nothing to bump (already latest, or unknown)
 			}
+			$slug = isset( $t['slug'] ) ? $t['slug'] : '';
+			$did  = false;
 			// 1) Known static version files (readme/changelog/release_log),
 			//    matched case-insensitively (e.g. README.txt vs readme.txt).
 			foreach ( $this->version_files_in_dir( $t['dir'] ) as $file ) {
 				if ( $this->rewrite( $file, $t['installed'], $t['latest'], false ) ) {
 					$changed[] = $file;
+					$did       = true;
 				}
 			}
 			// 2) Asset banner comments (e.g. "elementor - v3.17.0" at the top of
@@ -77,10 +81,59 @@ class SCShield_CompFiles {
 			foreach ( $this->asset_files( $t['dir'] ) as $file ) {
 				if ( $this->rewrite( $file, $t['installed'], $t['latest'], true ) ) {
 					$changed[] = $file;
+					$did       = true;
+				}
+			}
+			// Remember what we wrote so Off/Obfuscate can revert it exactly.
+			if ( $did && '' !== $slug ) {
+				$record[ $slug ] = array( 'installed' => $t['installed'], 'decoy' => $t['latest'] );
+			}
+		}
+
+		if ( $record ) {
+			$prev = get_option( 'scshield_decoyed', array() );
+			$prev = is_array( $prev ) ? $prev : array();
+			update_option( 'scshield_decoyed', array_merge( $prev, $record ), false );
+		}
+		return $changed;
+	}
+
+	/**
+	 * Revert any decoy file edits back to the real installed versions, using the
+	 * recorded decoy→installed mapping. Called when the components mode leaves
+	 * Decoy (Off/Obfuscate) and on deactivation.
+	 */
+	public function restore() {
+		$record = get_option( 'scshield_decoyed', array() );
+		if ( ! is_array( $record ) || ! $record ) {
+			return array();
+		}
+		$reverted = array();
+
+		foreach ( $this->targets() as $t ) {
+			$slug = isset( $t['slug'] ) ? $t['slug'] : '';
+			if ( '' === $slug || ! isset( $record[ $slug ] ) ) {
+				continue;
+			}
+			$from = $record[ $slug ]['decoy'];     // what we wrote
+			$to   = $record[ $slug ]['installed'];  // the real version
+			if ( '' === $from || $from === $to ) {
+				continue;
+			}
+			foreach ( $this->version_files_in_dir( $t['dir'] ) as $file ) {
+				if ( $this->rewrite( $file, $from, $to, false ) ) {
+					$reverted[] = $file;
+				}
+			}
+			foreach ( $this->asset_files( $t['dir'] ) as $file ) {
+				if ( $this->rewrite( $file, $from, $to, true ) ) {
+					$reverted[] = $file;
 				}
 			}
 		}
-		return $changed;
+
+		delete_option( 'scshield_decoyed' );
+		return $reverted;
 	}
 
 	/**
