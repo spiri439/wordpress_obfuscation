@@ -65,9 +65,9 @@ class SCShield_CompFiles {
 			if ( '' === $t['installed'] || '' === $t['latest'] || $t['installed'] === $t['latest'] ) {
 				continue; // nothing to bump (already latest, or unknown)
 			}
-			// 1) Known static version files (readme/changelog/release_log).
-			foreach ( self::$files as $fn ) {
-				$file = trailingslashit( $t['dir'] ) . $fn;
+			// 1) Known static version files (readme/changelog/release_log),
+			//    matched case-insensitively (e.g. README.txt vs readme.txt).
+			foreach ( $this->version_files_in_dir( $t['dir'] ) as $file ) {
 				if ( $this->rewrite( $file, $t['installed'], $t['latest'], false ) ) {
 					$changed[] = $file;
 				}
@@ -81,6 +81,34 @@ class SCShield_CompFiles {
 			}
 		}
 		return $changed;
+	}
+
+	/**
+	 * Top-level version files in a component dir, matched case-insensitively
+	 * (README.txt, readme.txt, Changelog.TXT, release_log.html, …).
+	 */
+	private function version_files_in_dir( $dir ) {
+		$found = array();
+		if ( ! is_dir( $dir ) ) {
+			return $found;
+		}
+		$set     = array_flip( self::$files ); // lowercase known names
+		$entries = @scandir( $dir );
+		if ( ! is_array( $entries ) ) {
+			return $found;
+		}
+		foreach ( $entries as $e ) {
+			if ( '.' === $e || '..' === $e ) {
+				continue;
+			}
+			if ( isset( $set[ strtolower( $e ) ] ) ) {
+				$p = trailingslashit( $dir ) . $e;
+				if ( is_file( $p ) ) {
+					$found[] = $p;
+				}
+			}
+		}
+		return $found;
 	}
 
 	/**
