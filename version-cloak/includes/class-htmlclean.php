@@ -22,6 +22,9 @@ class SCShield_HTMLClean {
 	/** @var array */
 	private $s;
 
+	/** Nesting level of the buffer we open, so we can close exactly ours. */
+	private $buffer_level = 0;
+
 	public function __construct( array $settings ) {
 		$this->s = $settings;
 	}
@@ -44,6 +47,25 @@ class SCShield_HTMLClean {
 			return;
 		}
 		ob_start( array( $this, 'clean' ) );
+		$this->buffer_level = ob_get_level();
+
+		// Explicitly close the buffer we opened instead of leaving it to PHP's
+		// end-of-request flush. Runs last so any caching/optimization plugin that
+		// reads the buffer on shutdown does so first.
+		add_action( 'shutdown', array( $this, 'flush_buffer' ), PHP_INT_MAX );
+	}
+
+	/**
+	 * Close the output buffer this instance opened, pairing the ob_start() above.
+	 * Only acts when our buffer is still open and is the topmost one, so we never
+	 * disturb a buffer another component stacked on top of (or already closed)
+	 * ours. ob_end_flush() triggers our clean() callback as it flushes.
+	 */
+	public function flush_buffer() {
+		if ( $this->buffer_level > 0 && ob_get_level() === $this->buffer_level ) {
+			ob_end_flush();
+		}
+		$this->buffer_level = 0;
 	}
 
 	/**

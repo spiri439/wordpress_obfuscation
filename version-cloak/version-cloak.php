@@ -3,11 +3,11 @@
  * Plugin Name:       Version Cloak
  * Plugin URI:        https://github.com/spiri439/wordpress_obfuscation
  * Description:        Reduces fingerprinting by mass scanners: hides plugin/core version leaks, neutralizes XML-RPC, and locks down WP-Cron. Hardening layer — NOT a substitute for keeping plugins updated.
- * Version:           1.0.0
+ * Version:           1.0.1
  * Requires at least: 5.0
- * Requires PHP:      5.6
- * Author:            spiri439
- * Author URI:        https://vesrl.ro
+ * Requires PHP:      7.0
+ * Author:            nextdoorentertainment
+ * Author URI:        https://vladenterprises.ro
  * License:           GPLv2 or later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       version-cloak
@@ -22,19 +22,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-// Minimum PHP guard: bail gracefully on very old PHP instead of fataling.
-// The plugin itself is written to run on PHP 5.6+ (no 7.0+ syntax).
-if ( version_compare( PHP_VERSION, '5.6', '<' ) ) {
+// Minimum PHP guard: bail gracefully on old PHP instead of fataling.
+if ( version_compare( PHP_VERSION, '7.0', '<' ) ) {
 	add_action( 'admin_notices', 'scshield_php_notice' );
 	if ( ! function_exists( 'scshield_php_notice' ) ) {
 		function scshield_php_notice() {
-			echo '<div class="notice notice-error"><p>Version Cloak requires PHP 5.6 or newer. It has been disabled.</p></div>';
+			echo '<div class="notice notice-error"><p>Version Cloak requires PHP 7.0 or newer. It has been disabled.</p></div>';
 		}
 	}
 	return; // Stop loading the rest of the plugin.
 }
 
-define( 'SCSHIELD_VERSION', '1.0.0' );
+define( 'SCSHIELD_VERSION', '1.0.1' );
 define( 'SCSHIELD_FILE', __FILE__ );
 define( 'SCSHIELD_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SCSHIELD_OPTION', 'scshield_settings' );

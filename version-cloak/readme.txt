@@ -1,10 +1,10 @@
 === Version Cloak ===
-Contributors: spiri439
+Contributors: nextdoorentertainment
 Tags: security, version, hardening, xml-rpc, wp-cron
 Requires at least: 5.0
 Tested up to: 7.0
-Requires PHP: 5.6
-Stable tag: 1.0.0
+Requires PHP: 7.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -72,10 +72,17 @@ Almost always page caching. Purge your cache (e.g. LiteSpeed → Purge All) and 
 
 == Changelog ==
 
+= 1.0.1 =
+* Raised minimum PHP to 7.0 (header and readme).
+* Explicitly close the front-end output buffer on shutdown.
+
 = 1.0.0 =
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.0.1 =
+Compatibility and packaging fixes for the WordPress.org review.
 
 = 1.0.0 =
 Initial release.

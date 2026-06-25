@@ -36,7 +36,7 @@ class SCShield_Theme {
 		}
 		// A theme update/switch replaces style.css with the genuine new version,
 		// so re-capture the real version there, then re-mask.
-		add_action( 'upgrader_process_complete', array( $this, 'recapture_and_strip' ), 20 );
+		add_action( 'upgrader_process_complete', array( $this, 'recapture_and_strip' ), 20, 2 );
 		add_action( 'switch_theme', array( $this, 'recapture_and_strip' ) );
 
 		// Because masking style.css hides WordPress's own theme-update notice,
@@ -104,16 +104,69 @@ class SCShield_Theme {
 	/**
 	 * After a genuine theme update/switch, drop the stored real versions for the
 	 * active theme so strip() re-captures the new genuine version, then re-mask.
+	 *
+	 * CRITICAL: `upgrader_process_complete` fires for EVERY upgrader run (any
+	 * plugin, core, translations — not just our theme). style.css is only
+	 * overwritten with a genuine version by a theme update. If we recaptured on
+	 * any other event, we'd re-read our own already-masked file and store the
+	 * mask (blank, or the decoy version) as the "real" version — poisoning the
+	 * restore. So when called from the upgrader hook, recapture ONLY for theme
+	 * updates that touched one of our slugs.
+	 *
+	 * @param WP_Upgrader|string|null $context     Upgrader instance (upgrader hook)
+	 *                                              or the new theme name (switch_theme).
+	 * @param array                   $hook_extra  Upgrader metadata (type/action/themes).
 	 */
-	public function recapture_and_strip() {
+	public function recapture_and_strip( $context = null, $hook_extra = array() ) {
+		$targets = array_keys( $this->target_map() );
+
+		if ( is_object( $context ) ) {
+			// upgrader_process_complete( $upgrader, $hook_extra ).
+			$type = is_array( $hook_extra ) && isset( $hook_extra['type'] ) ? $hook_extra['type'] : '';
+			if ( 'theme' !== $type ) {
+				// Not a theme update — style.css is untouched and still masked.
+				// Leave the stored real versions alone; nothing to do.
+				return;
+			}
+			// Limit recapture to the themes the upgrader actually reported, so an
+			// update to some other (inactive) theme can't poison our slugs.
+			$updated = $this->updated_theme_slugs( $hook_extra );
+			if ( null !== $updated ) {
+				$targets = array_intersect( $targets, $updated );
+				if ( empty( $targets ) ) {
+					return; // a theme update, but not ours
+				}
+			}
+		}
+		// switch_theme (or a confirmed theme update): the genuine style.css is on
+		// disk now, so drop the cached real versions and let strip() re-capture.
+
 		$reals = get_option( self::REAL_OPT, array() );
 		if ( is_array( $reals ) ) {
-			foreach ( array_keys( $this->target_map() ) as $slug ) {
+			foreach ( $targets as $slug ) {
 				unset( $reals[ $slug ] );
 			}
 			update_option( self::REAL_OPT, $reals );
 		}
 		$this->strip();
+	}
+
+	/**
+	 * Extract the theme slugs an upgrader run reported, from its `$hook_extra`.
+	 * Returns an array of slugs, or null when the upgrader gave no slug list
+	 * (in which case the caller should fall back to its own targets).
+	 */
+	private function updated_theme_slugs( $hook_extra ) {
+		if ( ! is_array( $hook_extra ) ) {
+			return null;
+		}
+		if ( ! empty( $hook_extra['themes'] ) && is_array( $hook_extra['themes'] ) ) {
+			return $hook_extra['themes']; // bulk update
+		}
+		if ( ! empty( $hook_extra['theme'] ) && is_string( $hook_extra['theme'] ) ) {
+			return array( $hook_extra['theme'] ); // single update
+		}
+		return null;
 	}
 
 	/**
