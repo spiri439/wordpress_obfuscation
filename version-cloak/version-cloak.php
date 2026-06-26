@@ -3,7 +3,7 @@
  * Plugin Name:       Version Cloak
  * Plugin URI:        https://github.com/spiri439/wordpress_obfuscation
  * Description:        Reduces fingerprinting by mass scanners: hides plugin/core version leaks, neutralizes XML-RPC, and locks down WP-Cron. Hardening layer — NOT a substitute for keeping plugins updated.
- * Version:           1.0.2
+ * Version:           1.0.3
  * Requires at least: 5.0
  * Requires PHP:      7.0
  * Author:            nextdoorentertainment
@@ -38,7 +38,13 @@ if ( version_compare( PHP_VERSION, '7.0', '<' ) ) {
 // loading this second copy would fatally redeclare our shared functions,
 // constants, and classes. Bail gracefully with a notice instead of crashing
 // the site. The real fix is to keep only one copy of the plugin.
-if ( defined( 'SCSHIELD_VERSION' ) || function_exists( 'scshield_default_settings' ) ) {
+//
+// Test SCSHIELD_VERSION only: it is define()'d at runtime just below, so on a
+// normal single install it is NOT yet set here (guard passes). We must NOT also
+// test function_exists() of a function declared later in THIS file — PHP hoists
+// top-level function declarations, so that check is already true on a single
+// install and would make every site wrongly bail.
+if ( defined( 'SCSHIELD_VERSION' ) ) {
 	add_action( 'admin_notices', 'scshield_duplicate_notice' );
 	if ( ! function_exists( 'scshield_duplicate_notice' ) ) {
 		function scshield_duplicate_notice() {
@@ -48,7 +54,7 @@ if ( defined( 'SCSHIELD_VERSION' ) || function_exists( 'scshield_default_setting
 	return; // Stop loading this duplicate copy.
 }
 
-define( 'SCSHIELD_VERSION', '1.0.2' );
+define( 'SCSHIELD_VERSION', '1.0.3' );
 define( 'SCSHIELD_FILE', __FILE__ );
 define( 'SCSHIELD_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SCSHIELD_OPTION', 'scshield_settings' );

@@ -4,7 +4,7 @@ Tags: security, version, hardening, xml-rpc, wp-cron
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.0
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -72,6 +72,9 @@ Almost always page caching. Purge your cache (e.g. LiteSpeed → Purge All) and 
 
 == Changelog ==
 
+= 1.0.3 =
+* Fix: the 1.0.2 duplicate-copy guard wrongly triggered on normal single-site installs (PHP hoists the function it tested), disabling the plugin and its settings. The guard now checks only the runtime version constant.
+
 = 1.0.2 =
 * Guard against a fatal "cannot redeclare" error when a second copy of the plugin is active under a different folder name.
 * Asset version hiding now catches the ver= query parameter in any position (e.g. ?cache=9&ver=1.2.3), not only when it is first.
@@ -84,6 +87,9 @@ Almost always page caching. Purge your cache (e.g. LiteSpeed → Purge All) and 
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.0.3 =
+Important fix: 1.0.2 could disable itself on a normal install. Update immediately.
 
 = 1.0.2 =
 Stability and version-hiding improvements. Recommended update.
