@@ -4,7 +4,7 @@ Tags: security, version, hardening, xml-rpc, wp-cron
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.0
-Stable tag: 1.0.3
+Stable tag: 1.0.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -72,6 +72,9 @@ Almost always page caching. Purge your cache (e.g. LiteSpeed → Purge All) and 
 
 == Changelog ==
 
+= 1.0.4 =
+* WP-Cron hardening is now OFF by default. Fresh installs keep WordPress's normal scheduled tasks (update checks, scheduled posts, backups) working out of the box. Enable "Disable the HTTP pseudo-cron" only alongside a real system cron.
+
 = 1.0.3 =
 * Fix: the 1.0.2 duplicate-copy guard wrongly triggered on normal single-site installs (PHP hoists the function it tested), disabling the plugin and its settings. The guard now checks only the runtime version constant.
 
@@ -87,6 +90,9 @@ Almost always page caching. Purge your cache (e.g. LiteSpeed → Purge All) and 
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.0.4 =
+WP-Cron is left enabled by default now. Existing sites keep their current setting; change it under Settings -> Version Cloak -> WP-Cron if needed.
 
 = 1.0.3 =
 Important fix: 1.0.2 could disable itself on a normal install. Update immediately.

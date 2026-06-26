@@ -3,7 +3,7 @@
  * Plugin Name:       Version Cloak
  * Plugin URI:        https://github.com/spiri439/wordpress_obfuscation
  * Description:        Reduces fingerprinting by mass scanners: hides plugin/core version leaks, neutralizes XML-RPC, and locks down WP-Cron. Hardening layer — NOT a substitute for keeping plugins updated.
- * Version:           1.0.3
+ * Version:           1.0.4
  * Requires at least: 5.0
  * Requires PHP:      7.0
  * Author:            nextdoorentertainment
@@ -54,7 +54,7 @@ if ( defined( 'SCSHIELD_VERSION' ) ) {
 	return; // Stop loading this duplicate copy.
 }
 
-define( 'SCSHIELD_VERSION', '1.0.3' );
+define( 'SCSHIELD_VERSION', '1.0.4' );
 define( 'SCSHIELD_FILE', __FILE__ );
 define( 'SCSHIELD_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SCSHIELD_OPTION', 'scshield_settings' );
@@ -87,9 +87,11 @@ function scshield_default_settings() {
 		// XML-RPC.
 		'xmlrpc_mode'           => 'disable', // 'off' | 'disable' | 'pingback_only_off'
 
-		// WP-Cron.
-		'disable_wp_cron'       => 1,
-		'block_wpcron_external' => 1,
+		// WP-Cron. OFF by default so WordPress's scheduled tasks (updates,
+		// publish-scheduled posts, backups) keep working out of the box. These
+		// are opt-in hardening — only enable them alongside a real system cron.
+		'disable_wp_cron'       => 0,
+		'block_wpcron_external' => 0,
 		'wpcron_secret'         => '',
 	);
 }
