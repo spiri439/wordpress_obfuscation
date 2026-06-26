@@ -97,22 +97,12 @@ class SCShield_HTMLClean {
 			);
 		}
 
-		// Handle ?ver= on asset URLs left inside inline CSS/markup (e.g.
-		// @font-face url(".../fa-solid-900.woff2?ver=8.30")). The enqueue filter
-		// only covers <link>/<script> tags, not URLs embedded in CSS text.
-		$pattern = '#((?:[^\s"\'()]+)\.(?:css|js|woff2?|ttf|otf|eot|svg|png|jpe?g|gif|webp))\?ver=[0-9A-Za-z.\-]+#i';
-		if ( ! empty( $this->s['spoof_components_latest'] ) ) {
-			// Rewrite to the owning component's latest version (looks patched);
-			// remove the version when the component is unknown.
-			$html = preg_replace_callback(
-				$pattern,
-				array( $this, 'spoof_ver_in_url' ),
-				$html
-			);
-		} else {
-			// Strip the version entirely.
-			$html = preg_replace( $pattern, '$1', $html );
-		}
+		// Handle ver= on asset URLs left inside markup/inline CSS (e.g. a <link>
+		// the enqueue filter missed, or @font-face url(".../fa.woff2?ver=8.30")).
+		// Matches the asset URL plus its whole query string so ver= is caught in
+		// any position (?ver=, ?x=1&ver=, ?x=1&amp;ver=), not just first.
+		$pattern = '#([^\s"\'()]+\.(?:css|js|woff2?|ttf|otf|eot|svg|png|jpe?g|gif|webp))\?([^\s"\'()]*)#i';
+		$html    = preg_replace_callback( $pattern, array( $this, 'handle_asset_ver' ), $html );
 
 		// Plugin version strings embedded in HTML comments. Yoast SEO prints
 		// "<!-- ... optimized with the Yoast SEO plugin v27.6 - ... -->".
@@ -147,12 +137,41 @@ class SCShield_HTMLClean {
 	}
 
 	/**
-	 * Callback for ?ver= rewriting in inline URLs: append the owning
-	 * component's latest version, or drop ?ver= if the component is unknown.
+	 * Callback for asset URLs carrying a query string: drop the real ver= token
+	 * wherever it sits, then in Decoy mode re-add the owning component's latest
+	 * version (looks patched). Other query args are preserved in order, and the
+	 * original separator (& or &amp;) is kept so the URL stays valid.
 	 */
-	public function spoof_ver_in_url( $m ) {
-		$url    = $m[1];
-		$latest = SCShield_Versions::latest_for_url( $url );
-		return ( '' !== $latest ) ? $url . '?ver=' . $latest : $url;
+	public function handle_asset_ver( $m ) {
+		$path  = $m[1];
+		$query = $m[2];
+
+		$sep   = ( false !== strpos( $query, '&amp;' ) ) ? '&amp;' : '&';
+		$parts = preg_split( '/&amp;|&/', $query );
+		$kept  = array();
+		$found = false;
+		foreach ( $parts as $p ) {
+			if ( '' === $p ) {
+				continue;
+			}
+			if ( preg_match( '/^ver=/i', $p ) ) {
+				$found = true; // drop the real version
+				continue;
+			}
+			$kept[] = $p;
+		}
+		if ( ! $found ) {
+			return $m[0]; // no ver= param — leave the URL exactly as-is
+		}
+
+		// Decoy mode: re-add the component's latest version so it reads as patched.
+		if ( ! empty( $this->s['spoof_components_latest'] ) ) {
+			$latest = SCShield_Versions::latest_for_url( $path );
+			if ( '' !== $latest ) {
+				$kept[] = 'ver=' . $latest;
+			}
+		}
+
+		return empty( $kept ) ? $path : $path . '?' . implode( $sep, $kept );
 	}
 }

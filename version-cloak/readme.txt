@@ -4,7 +4,7 @@ Tags: security, version, hardening, xml-rpc, wp-cron
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.0
-Stable tag: 1.0.1
+Stable tag: 1.0.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -72,6 +72,10 @@ Almost always page caching. Purge your cache (e.g. LiteSpeed → Purge All) and 
 
 == Changelog ==
 
+= 1.0.2 =
+* Guard against a fatal "cannot redeclare" error when a second copy of the plugin is active under a different folder name.
+* Asset version hiding now catches the ver= query parameter in any position (e.g. ?cache=9&ver=1.2.3), not only when it is first.
+
 = 1.0.1 =
 * Raised minimum PHP to 7.0 (header and readme).
 * Explicitly close the front-end output buffer on shutdown.
@@ -80,6 +84,9 @@ Almost always page caching. Purge your cache (e.g. LiteSpeed → Purge All) and 
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.0.2 =
+Stability and version-hiding improvements. Recommended update.
 
 = 1.0.1 =
 Compatibility and packaging fixes for the WordPress.org review.

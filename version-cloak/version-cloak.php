@@ -3,7 +3,7 @@
  * Plugin Name:       Version Cloak
  * Plugin URI:        https://github.com/spiri439/wordpress_obfuscation
  * Description:        Reduces fingerprinting by mass scanners: hides plugin/core version leaks, neutralizes XML-RPC, and locks down WP-Cron. Hardening layer — NOT a substitute for keeping plugins updated.
- * Version:           1.0.1
+ * Version:           1.0.2
  * Requires at least: 5.0
  * Requires PHP:      7.0
  * Author:            nextdoorentertainment
@@ -48,7 +48,7 @@ if ( defined( 'SCSHIELD_VERSION' ) || function_exists( 'scshield_default_setting
 	return; // Stop loading this duplicate copy.
 }
 
-define( 'SCSHIELD_VERSION', '1.0.1' );
+define( 'SCSHIELD_VERSION', '1.0.2' );
 define( 'SCSHIELD_FILE', __FILE__ );
 define( 'SCSHIELD_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SCSHIELD_OPTION', 'scshield_settings' );
