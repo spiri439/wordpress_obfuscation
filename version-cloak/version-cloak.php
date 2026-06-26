@@ -33,6 +33,21 @@ if ( version_compare( PHP_VERSION, '7.0', '<' ) ) {
 	return; // Stop loading the rest of the plugin.
 }
 
+// Duplicate-copy guard: if another copy of this plugin is already loaded (e.g.
+// an older install under a different folder such as "wordpress-obfuscation"),
+// loading this second copy would fatally redeclare our shared functions,
+// constants, and classes. Bail gracefully with a notice instead of crashing
+// the site. The real fix is to keep only one copy of the plugin.
+if ( defined( 'SCSHIELD_VERSION' ) || function_exists( 'scshield_default_settings' ) ) {
+	add_action( 'admin_notices', 'scshield_duplicate_notice' );
+	if ( ! function_exists( 'scshield_duplicate_notice' ) ) {
+		function scshield_duplicate_notice() {
+			echo '<div class="notice notice-error"><p><strong>Version Cloak:</strong> another copy of this plugin is already active (possibly installed under a different folder name). Keep only one copy and delete the other to avoid conflicts.</p></div>';
+		}
+	}
+	return; // Stop loading this duplicate copy.
+}
+
 define( 'SCSHIELD_VERSION', '1.0.1' );
 define( 'SCSHIELD_FILE', __FILE__ );
 define( 'SCSHIELD_DIR', plugin_dir_path( __FILE__ ) );
